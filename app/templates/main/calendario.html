@@ -215,8 +215,8 @@
                                 <span class="filter-name fw-medium small text-dark">{{ sala.nombre }}</span>
                             </div>
                             <!-- Hidden dot until active, or could color code it -->
-                            <div class="rounded-circle dot-indicator d-none"
-                                style="width: 6px; height: 6px; background-color: {{ sala.color }};"></div>
+                            <div class="rounded-circle dot-indicator d-none set-bg-color" data-color="{{ sala.color }}"
+                                style="width: 6px; height: 6px;"></div>
                         </li>
                         {% endfor %}
                     </ul>
@@ -284,8 +284,8 @@
                 <div class="d-flex flex-wrap gap-4">
                     {% for sala in salas %}
                     <div class="d-flex align-items-center">
-                        <div class="rounded-circle me-2"
-                            style="width: 8px; height: 8px; background-color: {{ sala.color }};"></div>
+                        <div class="rounded-circle me-2 set-bg-color" data-color="{{ sala.color }}"
+                            style="width: 8px; height: 8px;"></div>
                         <span class="fw-bold text-secondary" style="font-size: 0.75rem;">{{ sala.nombre }}</span>
                     </div>
                     {% endfor %}
@@ -329,103 +329,110 @@
 {% block extra_js %}
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/es.global.min.js'></script>
+<script id="eventos-data" type="application/json">
+    {{ eventos | tojson | safe }}
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Fix for IDE CSS Parsers false positives
+        document.querySelectorAll('.set-bg-color').forEach(el => {
+            el.style.backgroundColor = el.dataset.color;
+        });
+
         const calendarEl = document.getElementById('calendar');
 
         // Cargar eventos del backend
-        const rawEventos = {{ eventos | tojson | safe
-    }};
+        const rawEventos = JSON.parse(document.getElementById('eventos-data').textContent);
 
-    const eventos = rawEventos.map(evt => {
-        const originalColor = evt.backgroundColor || '#2563EB'; // Blue as default fallback
-        return {
-            ...evt,
-            backgroundColor: 'transparent',
-            borderColor: 'transparent',
-            extendedProps: {
-                ...evt.extendedProps,
-                salaColor: originalColor
-            }
-        };
-    });
-
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'timeGridWeek',
-        locale: 'es',
-        headerToolbar: false, // We use our custom header
-        slotMinTime: '08:00:00',
-        slotMaxTime: '18:00:00',
-        allDaySlot: false,
-        height: 700,
-        expandRows: true,
-        nowIndicator: true,
-        themeSystem: 'standard',
-        events: eventos,
-
-        // Format column headers exactly like the design (e.g. JUE 05, then big 05)
-        dayHeaderContent: function (arg) {
-            // Return custom HTML for the headers
-            const date = arg.date;
-            const weekday = date.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase();
-            const dayStr = String(date.getDate()).padStart(2, '0');
-
+        const eventos = rawEventos.map(evt => {
+            const originalColor = evt.backgroundColor || '#2563EB'; // Blue as default fallback
             return {
-                html: `
+                ...evt,
+                backgroundColor: 'transparent',
+                borderColor: 'transparent',
+                extendedProps: {
+                    ...evt.extendedProps,
+                    salaColor: originalColor
+                }
+            };
+        });
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            locale: 'es',
+            headerToolbar: false, // We use our custom header
+            slotMinTime: '08:00:00',
+            slotMaxTime: '18:00:00',
+            allDaySlot: false,
+            height: 700,
+            expandRows: true,
+            nowIndicator: true,
+            themeSystem: 'standard',
+            events: eventos,
+
+            // Format column headers exactly like the design (e.g. JUE 05, then big 05)
+            dayHeaderContent: function (arg) {
+                // Return custom HTML for the headers
+                const date = arg.date;
+                const weekday = date.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase();
+                const dayStr = String(date.getDate()).padStart(2, '0');
+
+                return {
+                    html: `
                         <div class="fc-col-header-cell-cushion text-center w-100">
                             <span>${weekday}</span>
                             <span class="fc-day-number">${dayStr}</span>
                         </div>
                     `
-            };
-        },
+                };
+            },
 
-        // Callback when dates are set to update our custom header
-        datesSet: function (info) {
-            const titleEl = document.getElementById('calendarTitle');
-            const rangeEl = document.getElementById('calendarDateRange');
+            // Callback when dates are set to update our custom header
+            datesSet: function (info) {
+                const titleEl = document.getElementById('calendarTitle');
+                const rangeEl = document.getElementById('calendarDateRange');
 
-            if (info.view.type === 'timeGridWeek') {
-                titleEl.textContent = 'Semana Actual';
-            } else if (info.view.type === 'dayGridMonth') {
-                titleEl.textContent = info.view.title;
-            } else if (info.view.type === 'timeGridDay') {
-                titleEl.textContent = 'Día Actual';
-            } else {
-                titleEl.textContent = info.view.title;
-            }
+                if (info.view.type === 'timeGridWeek') {
+                    titleEl.textContent = 'Semana Actual';
+                } else if (info.view.type === 'dayGridMonth') {
+                    titleEl.textContent = info.view.title;
+                } else if (info.view.type === 'timeGridDay') {
+                    titleEl.textContent = 'Día Actual';
+                } else {
+                    titleEl.textContent = info.view.title;
+                }
 
-            const startDate = info.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
-            // We show exclusive end date if it falls on the start of next week context. For fullcalendar timeGridWeek end is inclusive for users, so we substract a ms
-            const endDateObj = new Date(info.end.getTime() - 1);
-            const endDate = endDateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                const startDate = info.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
+                // We show exclusive end date if it falls on the start of next week context. For fullcalendar timeGridWeek end is inclusive for users, so we substract a ms
+                const endDateObj = new Date(info.end.getTime() - 1);
+                const endDate = endDateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-            // Capitalize properly
-            const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+                // Capitalize properly
+                const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-            if (info.view.type === 'dayGridMonth') {
-                rangeEl.textContent = 'Mes completo';
-            } else {
-                rangeEl.textContent = `${capitalize(startDate)} al ${capitalize(endDate)}`;
-            }
-        },
+                if (info.view.type === 'dayGridMonth') {
+                    rangeEl.textContent = 'Mes completo';
+                } else {
+                    rangeEl.textContent = `${capitalize(startDate)} al ${capitalize(endDate)}`;
+                }
+            },
 
-        eventContent: function (arg) {
-            const props = arg.event.extendedProps;
-            const salaColor = props.salaColor;
-            const title = arg.event.title;
-            const userText = props.usuario ? props.usuario.split(' ')[0] : 'Reserva';
-            const initial = userText ? userText.charAt(0).toUpperCase() : '?';
+            eventContent: function (arg) {
+                const props = arg.event.extendedProps;
+                const salaColor = props.salaColor;
+                const title = arg.event.title;
+                const userText = props.usuario ? props.usuario.split(' ')[0] : 'Reserva';
+                const initial = userText ? userText.charAt(0).toUpperCase() : '?';
 
-            // Formatear tiempos
-            const formatTime = (date) => {
-                return date ? date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
-            };
-            const timeStr = `${formatTime(arg.event.start)} - ${formatTime(arg.event.end)}`;
+                // Formatear tiempos
+                const formatTime = (date) => {
+                    return date ? date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+                };
+                const timeStr = `${formatTime(arg.event.start)} - ${formatTime(arg.event.end)}`;
 
-            // We construct the custom card matching the image
-            return {
-                html: `
+                // We construct the custom card matching the image
+                return {
+                    html: `
                         <div class="custom-event-card" style="--event-color: ${salaColor};">
                             <!-- Pill Label Top Left -->
                             <div class="badge rounded-pill d-inline-block fw-bold mb-1 text-truncate" style="max-width: 80%; background-color: ${salaColor}20; color: ${salaColor}; font-size: 0.55rem; letter-spacing: 0.5px; padding: 4px 8px;">
@@ -453,21 +460,21 @@
                             </div>
                         </div>
                     `
-            };
-        },
-        eventClick: function (info) {
-            const props = info.event.extendedProps;
-            const bgColor = props.salaColor;
+                };
+            },
+            eventClick: function (info) {
+                const props = info.event.extendedProps;
+                const bgColor = props.salaColor;
 
-            const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            const dateStr = info.event.start.toLocaleDateString('es-ES', dateOpts);
-            const timeStr = `${info.event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${info.event.end ? info.event.end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : 'Fin'}`;
+                const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const dateStr = info.event.start.toLocaleDateString('es-ES', dateOpts);
+                const timeStr = `${info.event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${info.event.end ? info.event.end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : 'Fin'}`;
 
-            document.getElementById('modalEventColorBadge').style.backgroundColor = bgColor;
-            document.getElementById('modalSalaTitulo').textContent = props.sala || 'Reserva';
-            document.getElementById('modalFechaHora').textContent = `${dateStr} | ${timeStr}`;
+                document.getElementById('modalEventColorBadge').style.backgroundColor = bgColor;
+                document.getElementById('modalSalaTitulo').textContent = props.sala || 'Reserva';
+                document.getElementById('modalFechaHora').textContent = `${dateStr} | ${timeStr}`;
 
-            const html = `
+                const html = `
                         <div class="row g-3">
                             <div class="col-12">
                                 <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;">Usuario Solicitante</span>
@@ -489,62 +496,62 @@
                             ` : ''}
                         </div>
                     `;
-            document.getElementById('modalDetallesBody').innerHTML = html;
-            new bootstrap.Modal(document.getElementById('modalDetalles')).show();
-        }
-    });
-
-    calendar.render();
-
-    // ---- UI Interactivity ----
-
-    // View Toggles
-    const viewBtns = document.querySelectorAll('.view-btn');
-    viewBtns.forEach(btn => {
-        btn.addEventListener('click', function () {
-            // Update UI active state
-            viewBtns.forEach(b => {
-                b.classList.remove('btn-primary', 'shadow-sm', 'text-white');
-                b.classList.add('text-secondary');
-                b.style.backgroundColor = 'transparent';
-            });
-
-            this.classList.remove('text-secondary');
-            this.classList.add('btn-primary', 'shadow-sm', 'text-white');
-            this.style.backgroundColor = '#1D4ED8';
-
-            // Tell Calendar
-            calendar.changeView(this.dataset.view);
-        });
-    });
-
-    // Custom Filters List Logic
-    const filterItems = document.querySelectorAll('.filter-item');
-    filterItems.forEach(item => {
-        item.addEventListener('click', function () {
-            // Update UI active states
-            filterItems.forEach(fi => {
-                fi.classList.remove('active');
-                const dot = fi.querySelector('.dot-indicator');
-                if (fi.dataset.salaId) dot.classList.add('d-none'); // Hide specific colored dots when inactive
-            });
-
-            this.classList.add('active');
-            const myDot = this.querySelector('.dot-indicator');
-            if (myDot) myDot.classList.remove('d-none');
-
-            // Filter Calendar Source
-            const salaId = this.dataset.salaId;
-            if (salaId) {
-                const eventosFiltrados = eventos.filter(e => e.extendedProps.sala_id == salaId);
-                calendar.removeAllEvents();
-                calendar.addEventSource(eventosFiltrados);
-            } else {
-                calendar.removeAllEvents();
-                calendar.addEventSource(eventos);
+                document.getElementById('modalDetallesBody').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('modalDetalles')).show();
             }
         });
-    });
+
+        calendar.render();
+
+        // ---- UI Interactivity ----
+
+        // View Toggles
+        const viewBtns = document.querySelectorAll('.view-btn');
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                // Update UI active state
+                viewBtns.forEach(b => {
+                    b.classList.remove('btn-primary', 'shadow-sm', 'text-white');
+                    b.classList.add('text-secondary');
+                    b.style.backgroundColor = 'transparent';
+                });
+
+                this.classList.remove('text-secondary');
+                this.classList.add('btn-primary', 'shadow-sm', 'text-white');
+                this.style.backgroundColor = '#1D4ED8';
+
+                // Tell Calendar
+                calendar.changeView(this.dataset.view);
+            });
+        });
+
+        // Custom Filters List Logic
+        const filterItems = document.querySelectorAll('.filter-item');
+        filterItems.forEach(item => {
+            item.addEventListener('click', function () {
+                // Update UI active states
+                filterItems.forEach(fi => {
+                    fi.classList.remove('active');
+                    const dot = fi.querySelector('.dot-indicator');
+                    if (fi.dataset.salaId) dot.classList.add('d-none'); // Hide specific colored dots when inactive
+                });
+
+                this.classList.add('active');
+                const myDot = this.querySelector('.dot-indicator');
+                if (myDot) myDot.classList.remove('d-none');
+
+                // Filter Calendar Source
+                const salaId = this.dataset.salaId;
+                if (salaId) {
+                    const eventosFiltrados = eventos.filter(e => e.extendedProps.sala_id == salaId);
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(eventosFiltrados);
+                } else {
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(eventos);
+                }
+            });
+        });
 
     });
 </script>
