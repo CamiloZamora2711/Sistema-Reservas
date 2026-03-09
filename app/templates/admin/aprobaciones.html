@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Aprobaciones - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="display-5 mb-4">
+        <i class="bi bi-check2-square"></i> Aprobación de Reservas
+    </h1>
+
+    {% if reservas.items %}
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Sala</th>
+                            <th>Fecha</th>
+                            <th>Bloque</th>
+                            <th>Curso</th>
+                            <th>Motivo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in reservas.items %}
+                        <tr>
+                            <td>{{ reserva.usuario.nombre }}</td>
+                            <td>
+                                <span class="badge" style="background-color: {{ reserva.sala.color }};">
+                                    {{ reserva.sala.nombre }}
+                                </span>
+                            </td>
+                            <td>{{ reserva.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td><small>{{ reserva.bloque }}</small></td>
+                            <td>
+                                {% if reserva.curso_asistente %}
+                                <span class="badge bg-info">{{ reserva.curso_asistente }}</span>
+                                {% else %}
+                                <small class="text-muted">-</small>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ reserva.motivo }}</small></td>
+                            <td>
+                                {% if reserva.estado == 'pendiente' %}
+                                <span class="badge bg-warning">Pendiente</span>
+                                {% elif reserva.estado == 'aprobada' %}
+                                <span class="badge bg-success">Aprobada</span>
+                                {% else %}
+                                <span class="badge bg-danger">Rechazada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin.aprobar_reserva', id=reserva.id) }}"
+                                    class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="accion" value="aprobar">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Aprobar">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.aprobar_reserva', id=reserva.id) }}"
+                                    class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="accion" value="rechazar">
+                                    <button type="submit" class="btn btn-sm btn-danger" title="Rechazar"
+                                        onclick="return confirm('¿Rechazar esta reserva?');">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.eliminar_reserva', id=reserva.id) }}"
+                                    class="d-inline"
+                                    onsubmit="return confirm('¿Estás seguro de eliminar esta reserva? Esta acción no se puede deshacer.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if reservas.pages > 1 %}
+            <nav>
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not reservas.has_prev %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.aprobaciones', page=reservas.prev_num) if reservas.has_prev else '#' }}">Anterior</a>
+                    </li>
+                    {% for page_num in reservas.iter_pages() %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == reservas.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.aprobaciones', page=page_num) }}">{{ page_num
+                            }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if not reservas.has_next %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.aprobaciones', page=reservas.next_num) if reservas.has_next else '#' }}">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No hay reservas pendientes de aprobación
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

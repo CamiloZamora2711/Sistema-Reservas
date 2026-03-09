@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Reservas - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2">
+    <!-- Header -->
+    <div class="row mb-5 align-items-center">
+        <div class="col-md-8">
+            <h1 class="fw-bold mb-1" style="font-size: 2rem; letter-spacing: -0.5px;">Mis Reservas</h1>
+            <p class="text-muted mb-0">Gestiona y revisa tus solicitudes de espacios.</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <a href="{{ url_for('main.nueva_reserva') }}"
+                class="btn btn-primary shadow-sm fw-medium rounded-pill px-4 d-inline-flex align-items-center">
+                <i class="bi bi-plus-lg me-2"></i> Crear Nueva Reserva
+            </a>
+        </div>
+    </div>
+
+    {% if reservas.items %}
+    <!-- Grid de Reservas -->
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4 mb-5">
+        {% for reserva in reservas.items %}
+        <div class="col">
+            <div
+                class="card card-premium h-100 border-0 overflow-hidden d-flex flex-column transition-all hover-shadow">
+                <!-- Color bar superior dependiendo del estado -->
+                {% set status_color = 'success' %}
+                {% if reserva.estado == 'pendiente' %}{% set status_color = 'warning' %}{% endif %}
+                {% if reserva.estado == 'rechazada' %}{% set status_color = 'danger' %}{% endif %}
+                {% if reserva.estado == 'cancelada' %}{% set status_color = 'secondary' %}{% endif %}
+                <div class="bg-{{ status_color }}" style="height: 4px; opacity: 0.9;"></div>
+
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center text-white me-3 flex-shrink-0"
+                                style="width: 42px; height: 42px; background-color: {{ reserva.sala.color }}; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                                <i class="bi bi-door-closed fs-5"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-0 lh-1">{{ reserva.sala.nombre }}</h5>
+                                <span class="text-muted small">Capacidad: {{ reserva.sala.capacidad }} personas</span>
+                            </div>
+                        </div>
+
+                        <!-- Badge de estado -->
+                        {% if reserva.estado == 'aprobada' %}
+                        <span
+                            class="badge bg-success bg-opacity-10 text-success rounded-pill fw-semibold px-2 py-1 border border-success border-opacity-25">
+                            <i class="bi bi-check-circle me-1"></i> Aprobada
+                        </span>
+                        {% elif reserva.estado == 'pendiente' %}
+                        <span
+                            class="badge bg-warning bg-opacity-10 text-warning rounded-pill fw-semibold px-2 py-1 border border-warning border-opacity-25">
+                            <i class="bi bi-clock me-1"></i> Pendiente
+                        </span>
+                        {% elif reserva.estado == 'rechazada' %}
+                        <span
+                            class="badge bg-danger bg-opacity-10 text-danger rounded-pill fw-semibold px-2 py-1 border border-danger border-opacity-25">
+                            <i class="bi bi-x-circle me-1"></i> Rechazada
+                        </span>
+                        {% elif reserva.estado == 'cancelada' %}
+                        <span
+                            class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill fw-semibold px-2 py-1 border border-secondary border-opacity-25">
+                            <i class="bi bi-slash-circle me-1"></i> Cancelada
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="bg-light rounded-3 p-3 mb-3 border flex-grow-1">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-calendar-event text-primary me-2 opacity-75"></i>
+                            <span class="fw-medium text-dark">{{ reserva.fecha.strftime('%d/%m/%Y') }}</span>
+                            <span class="mx-2 text-muted">•</span>
+                            <i class="bi bi-clock text-primary me-2 opacity-75"></i>
+                            <span class="fw-medium text-dark">{{ reserva.bloque }}</span>
+                        </div>
+
+                        {% if reserva.curso_asistente %}
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-people text-info me-2 opacity-75"></i>
+                            <span
+                                class="badge bg-info bg-opacity-10 text-info fw-semibold border border-info border-opacity-25">{{
+                                reserva.curso_asistente }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-2 text-muted small">
+                            <i class="bi bi-chat-left-text me-2 opacity-75"></i>
+                            {{ reserva.motivo }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-end mt-auto pt-2">
+                        <div class="text-muted" style="font-size: 0.7rem;">
+                            Creada el {{ reserva.created_at.strftime('%d/%m/%Y') }}
+                        </div>
+
+                        {% if reserva.estado in ['pendiente', 'aprobada'] and reserva.fecha >= now.date() %}
+                        <form method="POST" action="{{ url_for('main.cancelar_reserva', id=reserva.id) }}"
+                            class="d-inline" onsubmit="return confirm('¿Estás seguro de cancelar esta reserva?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit"
+                                class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-medium transition-all"
+                                title="Cancelar Reserva">
+                                Cancelar <i class="bi bi-x mb-0"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Paginación -->
+    {% if reservas.pages > 1 %}
+    <nav class="d-flex justify-content-center mt-5 mb-4" aria-label="Paginación de reservas">
+        <ul class="pagination pagination-sm shadow-sm">
+            <li class="page-item {% if not reservas.has_prev %}disabled{% endif %}">
+                <a class="page-link border-0 fw-medium px-3 text-secondary"
+                    href="{{ url_for('main.mis_reservas', page=reservas.prev_num) if reservas.has_prev else '#' }}">
+                    <i class="bi bi-chevron-left me-1"></i> Anterior
+                </a>
+            </li>
+
+            {% for page_num in reservas.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == reservas.page %}active{% endif %}">
+                <a class="page-link border-0 fw-medium px-3 {% if page_num == reservas.page %}bg-primary text-white rounded-3 shadow-sm{% else %}text-secondary{% endif %}"
+                    href="{{ url_for('main.mis_reservas', page=page_num) }}">
+                    {{ page_num }}
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link border-0 bg-transparent text-muted">...</span></li>
+            {% endif %}
+            {% endfor %}
+
+            <li class="page-item {% if not reservas.has_next %}disabled{% endif %}">
+                <a class="page-link border-0 fw-medium px-3 text-secondary"
+                    href="{{ url_for('main.mis_reservas', page=reservas.next_num) if reservas.has_next else '#' }}">
+                    Siguiente <i class="bi bi-chevron-right ms-1"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <style>
+        .pagination .page-link {
+            margin: 0 2px;
+            border-radius: 6px;
+        }
+
+        [data-bs-theme="dark"] .pagination .page-link:not(.active) {
+            background-color: #1e293b;
+            color: #cbd5e1;
+        }
+    </style>
+    {% endif %}
+
+    {% else %}
+    <!-- Vacío State -->
+    <div class="row justify-content-center mt-3">
+        <div class="col-md-8 col-lg-6">
+            <div class="card card-premium border-0 text-center py-5 px-4 shadow-sm">
+                <div class="d-inline-flex justify-content-center align-items-center rounded-circle bg-light text-muted mb-4 mx-auto"
+                    style="width: 100px; height: 100px;">
+                    <i class="bi bi-calendar-x fs-1 opacity-75"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-2">No tienes reservas activas</h3>
+                <p class="text-muted mb-4 px-md-4">Parece que aún no has programado el uso de ningún espacio. Crea tu
+                    primera reserva para comenzar a organizar tus actividades.</p>
+                <div>
+                    <a href="{{ url_for('main.nueva_reserva') }}"
+                        class="btn btn-primary btn-lg fw-semibold shadow-sm px-4 rounded-pill">
+                        <i class="bi bi-plus-lg me-2"></i> Crear Reserva
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    /* Utilities extendidas para cards hover */
+    .hover-shadow:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+        transform: translateY(-4px);
+    }
+
+    [data-bs-theme="dark"] .bg-light {
+        background-color: #1e293b !important;
+        border-color: #334155 !important;
+    }
+
+    [data-bs-theme="dark"] .hover-shadow:hover {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+    }
+</style>
+{% endblock %}

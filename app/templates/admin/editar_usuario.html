@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Usuario - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-gear"></i> Editar Usuario
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Editando: <strong>{{ usuario.email }}</strong>
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label fw-bold">Nombre Completo</label>
+                            {{ form.nombre(class="form-control") }}
+                            {% if form.nombre.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.nombre.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label fw-bold">Email</label>
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.email.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="rol" class="form-label fw-bold">Rol</label>
+                            {{ form.rol(class="form-select") }}
+                            <div class="form-text">
+                                <strong>Admin:</strong> Acceso total<br>
+                                <strong>Coordinador:</strong> Aprobar reservas, gestionar salas<br>
+                                <strong>Docente:</strong> Crear reservas
+                            </div>
+                            {% if form.rol.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.rol.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="curso" class="form-label fw-bold">Curso</label>
+                            {{ form.curso(class="form-select") }}
+                            <div class="form-text">Curso principal que atiende el usuario</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.activo(class="form-check-input", id="activo") }}
+                                <label class="form-check-label" for="activo">
+                                    Usuario Activo
+                                </label>
+                                <div class="form-text">Los usuarios inactivos no pueden iniciar sesión</div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <h6>Estadísticas del Usuario</h6>
+                            <ul class="list-group">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="text-muted mb-0">Reservas Totales</h6>
+                                    <span class="badge bg-primary rounded-pill">{{ usuario.reservas|length }}</span>
+                                </div>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Fecha de Registro
+                                    <span class="badge bg-secondary">{{ usuario.created_at.strftime('%d/%m/%Y')
+                                        }}</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-4">
+                            <h6 class="text-danger">
+                                <i class="bi bi-shield-lock"></i> Gestión de Contraseña
+                            </h6>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Cambiar contraseña:</strong> Podrás establecer una nueva contraseña para este
+                                usuario.
+                            </div>
+                            <a href="{{ url_for('admin.resetear_password', id=usuario.id) }}" class="btn btn-warning">
+                                <i class="bi bi-key"></i> Cambiar Contraseña
+                            </a>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.usuarios') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

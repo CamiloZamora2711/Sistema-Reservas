@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Logs de Auditoría - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="bi bi-journal-text"></i> Logs de Auditoría
+            </h1>
+            <p class="text-muted">Registro completo de todas las acciones del sistema</p>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Acción</label>
+                    <select name="accion" class="form-select">
+                        <option value="">Todas las acciones</option>
+                        <option value="login">Login</option>
+                        <option value="logout">Logout</option>
+                        <option value="crear_reserva">Crear Reserva</option>
+                        <option value="cancelar_reserva">Cancelar Reserva</option>
+                        <option value="aprobar_reserva">Aprobar Reserva</option>
+                        <option value="rechazar_reserva">Rechazar Reserva</option>
+                        <option value="editar_usuario">Editar Usuario</option>
+                        <option value="crear_sala">Crear Sala</option>
+                        <option value="editar_sala">Editar Sala</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" name="usuario" class="form-control" placeholder="Buscar por nombre...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Rango de Fechas</label>
+                    <div class="input-group">
+                        <input type="date" name="fecha_inicio" class="form-control">
+                        <span class="input-group-text">a</span>
+                        <input type="date" name="fecha_fin" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha/Hora</th>
+                            <th>Usuario</th>
+                            <th>Acción</th>
+                            <th>Entidad</th>
+                            <th>Detalles</th>
+                            <th>IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs.items %}
+                        <tr>
+                            <td><small class="text-muted">#{{ log.id }}</small></td>
+                            <td>
+                                <small>
+                                    <i class="bi bi-calendar3"></i> {{ log.timestamp.strftime('%d/%m/%Y') }}<br>
+                                    <i class="bi bi-clock"></i> {{ log.timestamp.strftime('%H:%M:%S') }}
+                                </small>
+                            </td>
+                            <td>
+                                {% if log.usuario %}
+                                <strong>{{ log.usuario.nombre }}</strong><br>
+                                <small class="text-muted">{{ log.usuario.email }}</small>
+                                {% else %}
+                                <span class="text-muted">Sistema</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if 'login' in log.accion %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-box-arrow-in-right"></i> {{ log.accion }}
+                                </span>
+                                {% elif 'logout' in log.accion %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-box-arrow-right"></i> {{ log.accion }}
+                                </span>
+                                {% elif 'crear' in log.accion %}
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-plus-circle"></i> {{ log.accion }}
+                                </span>
+                                {% elif 'editar' in log.accion %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-pencil"></i> {{ log.accion }}
+                                </span>
+                                {% elif 'eliminar' in log.accion or 'cancelar' in log.accion %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-trash"></i> {{ log.accion }}
+                                </span>
+                                {% elif 'aprobar' in log.accion %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> {{ log.accion }}
+                                </span>
+                                {% elif 'rechazar' in log.accion %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-x-circle"></i> {{ log.accion }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ log.accion }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.entidad %}
+                                <span class="badge bg-light text-dark">{{ log.entidad }}</span>
+                                {% if log.entidad_id %}
+                                <small class="text-muted">#{{ log.entidad_id }}</small>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if log.detalles %}
+                                <small>{{ log.detalles[:100] }}{% if log.detalles|length > 100 %}...{% endif %}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted font-monospace">{{ log.ip_address or '-' }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if logs.pages > 1 %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center mt-3">
+                    <li class="page-item {% if not logs.has_prev %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.logs', page=logs.prev_num) if logs.has_prev else '#' }}">
+                            Anterior
+                        </a>
+                    </li>
+
+                    {% for page_num in logs.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == logs.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('admin.logs', page=page_num) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <li class="page-item {% if not logs.has_next %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.logs', page=logs.next_num) if logs.has_next else '#' }}">
+                            Siguiente
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    Mostrando {{ logs.items|length }} de {{ logs.total }} registros
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+
+        .btn,
+        .pagination,
+        .card-body form {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
