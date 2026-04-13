@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Usuario - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-plus"></i> Crear Nuevo Usuario
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombre" class="form-label fw-bold">Nombre Completo *</label>
+                                {{ form.nombre(class="form-control", placeholder="Ej: Juan Pérez") }}
+                                {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.nombre.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label fw-bold">Email *</label>
+                                {{ form.email(class="form-control", placeholder="usuario@ssr.cl") }}
+                                {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.email.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label fw-bold">Contraseña *</label>
+                                {{ form.password(class="form-control") }}
+                                {% if form.password.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="password2" class="form-label fw-bold">Confirmar Contraseña *</label>
+                                {{ form.password2(class="form-control") }}
+                                {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password2.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="rol" class="form-label fw-bold">Rol *</label>
+                                {{ form.rol(class="form-select") }}
+                                {% if form.rol.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.rol.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="curso" class="form-label fw-bold">Curso (Opcional)</label>
+                                {{ form.curso(class="form-select") }}
+                                <div class="form-text">Solo para docentes que necesiten especificar su curso</div>
+                                {% if form.curso.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.curso.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.activo(class="form-check-input", id="activo", checked=true) }}
+                                <label class="form-check-label" for="activo">
+                                    Usuario Activo
+                                </label>
+                                <div class="form-text">Los usuarios inactivos no pueden iniciar sesión</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.usuarios') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Crear Usuario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

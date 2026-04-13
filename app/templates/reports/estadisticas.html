@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Estadísticas - SSR 2026{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="bi bi-graph-up"></i> Estadísticas
+            </h1>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('reports.exportar_reservas_excel', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}"
+                class="btn btn-success">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+            <a href="{{ url_for('reports.exportar_reservas_pdf', fecha_inicio=fecha_inicio, fecha_fin=fecha_fin) }}"
+                class="btn btn-danger">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label">Fecha Inicio</label>
+                    <input type="date" name="fecha_inicio" class="form-control" value="{{ fecha_inicio }}">
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Fecha Fin</label>
+                    <input type="date" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h6>Total Reservas</h6>
+                    <h2>{{ total_reservas }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h6>Aprobadas</h6>
+                    <h2>{{ reservas_por_estado|selectattr('0', 'equalto', 'aprobada')|map(attribute='1')|sum }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h6>Pendientes</h6>
+                    <h2>{{ reservas_por_estado|selectattr('0', 'equalto', 'pendiente')|map(attribute='1')|sum }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h6>Salas Activas</h6>
+                    <h2>{{ reservas_por_sala|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Reservas por Sala</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartSalas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Reservas por Día</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartDias"></canvas>
+                </div>
+            </div>
+        </div>
+
+        {% if current_user.is_coordinador() and top_usuarios %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Top 10 Usuarios</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartUsuarios"></canvas>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Bloques Más Usados</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartBloques"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Configuración de Chart.js
+    const chartColors = [
+        '#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545',
+        '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'
+    ];
+
+    // Gráfico de Salas
+    const ctxSalas = document.getElementById('chartSalas').getContext('2d');
+    new Chart(ctxSalas, {
+        type: 'bar',
+        data: {
+            labels: {{ reservas_por_sala| map(attribute = '0') | list | tojson }},
+        datasets: [{
+            label: 'Reservas',
+            data: {{ reservas_por_sala| map(attribute = '1') | list | tojson }},
+        backgroundColor: chartColors
+        }]
+    },
+        options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+
+    // Gráfico de Días
+    const ctxDias = document.getElementById('chartDias').getContext('2d');
+    new Chart(ctxDias, {
+        type: 'line',
+        data: {
+            labels: {{ reservas_por_dia| map(attribute = '0') | map('string') | list | tojson }},
+        datasets: [{
+            label: 'Reservas por Día',
+            data: {{ reservas_por_dia| map(attribute = '1') | list | tojson }},
+        borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+        fill: true,
+        tension: 0.4
+        }]
+    },
+        options: {
+        responsive: true,
+        plugins: {
+            legend: { display: true }
+        }
+    }
+});
+
+    {% if current_user.is_coordinador() and top_usuarios %}
+    // Gráfico de Usuarios
+    const ctxUsuarios = document.getElementById('chartUsuarios').getContext('2d');
+    new Chart(ctxUsuarios, {
+        type: 'horizontalBar',
+        data: {
+            labels: {{ top_usuarios| map(attribute = '0') | list | tojson }},
+        datasets: [{
+            label: 'Reservas',
+            data: {{ top_usuarios| map(attribute = '1') | list | tojson }},
+        backgroundColor: chartColors
+        }]
+    },
+        options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
+    {% endif %}
+
+    // Gráfico de Bloques
+    const ctxBloques = document.getElementById('chartBloques').getContext('2d');
+    new Chart(ctxBloques, {
+        type: 'doughnut',
+        data: {
+            labels: {{ bloques_mas_usados| map(attribute = '0') | list | tojson }},
+        datasets: [{
+            data: {{ bloques_mas_usados| map(attribute = '1') | list | tojson }},
+        backgroundColor: chartColors
+        }]
+    },
+        options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'right' }
+        }
+    }
+});
+</script>
+{% endblock %}

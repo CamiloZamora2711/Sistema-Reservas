@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Reservas - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="display-5">
+                <i class="bi bi-calendar-check"></i> Gestión de Reservas
+            </h1>
+            <p class="text-muted">Todas las reservas del sistema</p>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="pendiente" {% if estado_filtro=='pendiente' %}selected{% endif %}>Pendiente
+                        </option>
+                        <option value="aprobada" {% if estado_filtro=='aprobada' %}selected{% endif %}>Aprobada</option>
+                        <option value="rechazada" {% if estado_filtro=='rechazada' %}selected{% endif %}>Rechazada
+                        </option>
+                        <option value="cancelada" {% if estado_filtro=='cancelada' %}selected{% endif %}>Cancelada
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Sala</label>
+                    <select name="sala_id" class="form-select">
+                        <option value="">Todas las salas</option>
+                        {% for sala in salas %}
+                        <option value="{{ sala.id }}" {% if sala_filtro==sala.id %}selected{% endif %}>
+                            {{ sala.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                    <a href="{{ url_for('admin.reservas') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Reservas -->
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Sala</th>
+                            <th>Fecha</th>
+                            <th>Bloque</th>
+                            <th>Curso</th>
+                            <th>Motivo</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reserva in reservas.items %}
+                        <tr>
+                            <td><small class="text-muted">#{{ reserva.id }}</small></td>
+                            <td>
+                                <strong>{{ reserva.usuario.nombre }}</strong><br>
+                                <small class="text-muted">{{ reserva.usuario.email }}</small>
+                            </td>
+                            <td>
+                                <span class="badge" style="background-color: {{ reserva.sala.color }};">
+                                    {{ reserva.sala.nombre }}
+                                </span>
+                            </td>
+                            <td>{{ reserva.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td><small>{{ reserva.bloque }}</small></td>
+                            <td>
+                                {% if reserva.curso_asistente %}
+                                <span class="badge bg-info">{{ reserva.curso_asistente }}</span>
+                                {% else %}
+                                <small class="text-muted">No especificado</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ reserva.motivo[:50] }}{% if reserva.motivo|length > 50 %}...{% endif
+                                    %}</small>
+                            </td>
+                            <td>
+                                {% if reserva.estado == 'pendiente' %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-clock"></i> Pendiente
+                                </span>
+                                {% elif reserva.estado == 'aprobada' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Aprobada
+                                </span>
+                                {% elif reserva.estado == 'rechazada' %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Rechazada
+                                </span>
+                                {% elif reserva.estado == 'cancelada' %}
+                                <span class="badge bg-secondary">
+                                    <i class="bi bi-slash-circle"></i> Cancelada
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <!-- Aprobar (solo si está pendiente) -->
+                                {% if reserva.estado == 'pendiente' %}
+                                <form method="POST" action="{{ url_for('admin.aprobar_reserva', id=reserva.id) }}"
+                                    class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="accion" value="aprobar">
+                                    <button type="submit" class="btn btn-sm btn-success" title="Aprobar">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>
+                                </form>
+                                <form method="POST" action="{{ url_for('admin.aprobar_reserva', id=reserva.id) }}"
+                                    class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="accion" value="rechazar">
+                                    <button type="submit" class="btn btn-sm btn-warning" title="Rechazar">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Eliminar -->
+                                <form method="POST" action="{{ url_for('admin.eliminar_reserva', id=reserva.id) }}"
+                                    class="d-inline"
+                                    onsubmit="return confirm('¿Eliminar esta reserva? Esta acción no se puede deshacer.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            {% if reservas.pages > 1 %}
+            <nav aria-label="Paginación">
+                <ul class="pagination justify-content-center mt-3">
+                    <li class="page-item {% if not reservas.has_prev %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.reservas', page=reservas.prev_num, estado=estado_filtro, sala_id=sala_filtro) if reservas.has_prev else '#' }}">
+                            Anterior
+                        </a>
+                    </li>
+
+                    {% for page_num in reservas.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2)
+                    %}
+                    {% if page_num %}
+                    <li class="page-item {% if page_num == reservas.page %}active{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.reservas', page=page_num, estado=estado_filtro, sala_id=sala_filtro) }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <li class="page-item {% if not reservas.has_next %}disabled{% endif %}">
+                        <a class="page-link"
+                            href="{{ url_for('admin.reservas', page=reservas.next_num, estado=estado_filtro, sala_id=sala_filtro) if reservas.has_next else '#' }}">
+                            Siguiente
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+            <div class="text-center mt-3">
+                <small class="text-muted">
+                    Mostrando {{ reservas.items|length }} de {{ reservas.total }} reservas
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

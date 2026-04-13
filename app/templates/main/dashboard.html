@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Analítico - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3">
+    <!-- Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 border-bottom pb-3">
+        <div class="mb-3 mb-md-0">
+            <h4 class="fw-bold mb-0 text-dark" style="letter-spacing: -0.5px;">Resumen Analítico</h4>
+            <span class="text-muted" style="font-size: 0.85rem;">Panel de eficiencia y uso de espacios | {{
+                now.strftime('%d %b, %Y') if now else 'Hoy' }}</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button
+                class="btn btn-sm btn-outline-secondary d-flex align-items-center fw-medium border-light-subtle bg-white shadow-sm hover-bg-light transition-all">
+                <i class="bi bi-download me-2 text-muted"></i> Exportar
+            </button>
+            <a href="{{ url_for('main.nueva_reserva') }}"
+                class="btn btn-sm btn-primary d-flex align-items-center fw-medium shadow-sm transition-all hover-scale">
+                <i class="bi bi-plus-lg me-1"></i> Nueva Reserva
+            </a>
+        </div>
+    </div>
+
+    <!-- KPIs Compactos -->
+    <div class="row g-3 mb-4">
+        <!-- KPI Mis Reservas -->
+        <div class="col-6 col-xl-3">
+            <div class="card card-premium h-100 border-0 shadow-sm p-3 analytical-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted fw-bold text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">Mis Reservas</span>
+                    <div class="bg-primary bg-opacity-10 text-primary rounded p-1 lh-1"><i
+                            class="bi bi-journal-bookmark" style="font-size: 0.8rem;"></i></div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-1">
+                    <h2 class="fw-bolder mb-0 text-dark lh-1" style="font-size: 1.75rem;">{{ mis_reservas_count }}</h2>
+                    <div class="text-success fw-bold d-flex align-items-center" style="font-size: 0.75rem;">
+                        <i class="bi bi-arrow-up-short fs-6"></i> 14%
+                    </div>
+                </div>
+                <!-- CSS Pseudo Sparkline -->
+                <div class="mt-3 w-100 bg-secondary bg-opacity-10 rounded overflow-hidden" style="height: 4px;">
+                    <div class="bg-primary h-100 rounded" style="width: 65%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Salas Disponibles -->
+        <div class="col-6 col-xl-3">
+            <div class="card card-premium h-100 border-0 shadow-sm p-3 analytical-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted fw-bold text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">Salas en Sistema</span>
+                    <div class="bg-success bg-opacity-10 text-success rounded p-1 lh-1"><i class="bi bi-door-open"
+                            style="font-size: 0.8rem;"></i></div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-1">
+                    <h2 class="fw-bolder mb-0 text-dark lh-1" style="font-size: 1.75rem;">{{ salas_count }}</h2>
+                    <div class="text-muted fw-medium d-flex align-items-center" style="font-size: 0.75rem;">
+                        Estable
+                    </div>
+                </div>
+                <div class="mt-3 w-100 bg-secondary bg-opacity-10 rounded overflow-hidden" style="height: 4px;">
+                    <div class="bg-success h-100 rounded" style="width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Pendientes -->
+        <div class="col-6 col-xl-3">
+            <div class="card card-premium h-100 border-0 shadow-sm p-3 analytical-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted fw-bold text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">Aprobación Pdts.</span>
+                    <div class="bg-warning bg-opacity-10 text-warning rounded p-1 lh-1"><i class="bi bi-clock-history"
+                            style="font-size: 0.8rem;"></i></div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-1">
+                    <h2 class="fw-bolder mb-0 text-dark lh-1" style="font-size: 1.75rem;">{{ reservas_pendientes }}</h2>
+                    <div class="text-danger fw-bold d-flex align-items-center" style="font-size: 0.75rem;">
+                        <i class="bi bi-arrow-up-short fs-6"></i> 2
+                    </div>
+                </div>
+                <div class="mt-3 w-100 d-flex gap-1" style="height: 4px;">
+                    <div class="bg-warning h-100 rounded col"></div>
+                    <div class="bg-warning h-100 rounded col opacity-50"></div>
+                    <div class="bg-secondary bg-opacity-25 h-100 rounded col"></div>
+                    <div class="bg-secondary bg-opacity-25 h-100 rounded col"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Tasa Aprobación -->
+        <div class="col-6 col-xl-3">
+            <div class="card card-premium h-100 border-0 shadow-sm p-3 analytical-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="text-muted fw-bold text-uppercase"
+                        style="font-size: 0.65rem; letter-spacing: 0.5px;">Tasa Apromación</span>
+                    <div class="bg-info bg-opacity-10 text-info rounded p-1 lh-1"><i class="bi bi-pie-chart"
+                            style="font-size: 0.8rem;"></i></div>
+                </div>
+                <div class="d-flex align-items-end justify-content-between mt-1">
+                    <h2 class="fw-bolder mb-0 text-dark lh-1" style="font-size: 1.75rem;">92<span
+                            class="fs-5 text-muted">%</span></h2>
+                    <div class="text-success fw-bold d-flex align-items-center" style="font-size: 0.75rem;">
+                        <i class="bi bi-arrow-up-short fs-6"></i> 3%
+                    </div>
+                </div>
+                <!-- Mini bar chart CSS -->
+                <div class="mt-3 d-flex align-items-end justify-content-between h-100" style="height: 12px !important;">
+                    <div class="bg-info rounded-top opacity-50" style="width: 12%; height: 40%"></div>
+                    <div class="bg-info rounded-top opacity-50" style="width: 12%; height: 60%"></div>
+                    <div class="bg-info rounded-top opacity-75" style="width: 12%; height: 50%"></div>
+                    <div class="bg-info rounded-top opacity-75" style="width: 12%; height: 80%"></div>
+                    <div class="bg-info rounded-top opacity-100" style="width: 12%; height: 100%"></div>
+                    <div class="bg-info rounded-top opacity-100" style="width: 12%; height: 95%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Main Data Table (Condensed) -->
+        <div class="col-lg-9">
+            <div class="card card-premium border-0 shadow-sm h-100">
+                <div
+                    class="card-header bg-white border-bottom pt-3 pb-2 px-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-dark mb-0 fs-6">Registro de Reservas Próximas</h6>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm w-auto">
+                            <span class="input-group-text bg-light border-end-0 text-muted"><i
+                                    class="bi bi-search"></i></span>
+                            <input type="text" class="form-control border-start-0 bg-light fw-medium"
+                                placeholder="Filtrar sala..." style="max-width: 150px; font-size: 0.75rem;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    {% if mis_reservas %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0 font-monospace text-dark"
+                            style="font-size: 0.8rem;">
+                            <thead class="bg-light text-muted border-bottom">
+                                <tr>
+                                    <th class="ps-3 py-2 fw-semibold text-uppercase"
+                                        style="letter-spacing: 0.5px; font-size: 0.65rem;">ID / Ref</th>
+                                    <th class="py-2 fw-semibold text-uppercase"
+                                        style="letter-spacing: 0.5px; font-size: 0.65rem;">Sala (Capacidad)</th>
+                                    <th class="py-2 fw-semibold text-uppercase"
+                                        style="letter-spacing: 0.5px; font-size: 0.65rem;">Fecha y Bloque</th>
+                                    <th class="py-2 fw-semibold text-uppercase text-center"
+                                        style="letter-spacing: 0.5px; font-size: 0.65rem;">Estado</th>
+                                    <th class="pe-3 py-2 fw-semibold text-uppercase text-end"
+                                        style="letter-spacing: 0.5px; font-size: 0.65rem;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reserva in mis_reservas %}
+                                <tr>
+                                    <td class="ps-3 py-2 text-muted fw-bold">#{{ "%04d" | format(reserva.id) }}</td>
+                                    <td class="py-2">
+                                        <div class="d-flex align-items-center">
+                                            <span class="d-inline-block rounded-circle me-2"
+                                                style="width: 8px; height: 8px; background-color: {{ reserva.sala.color }};"></span>
+                                            <span class="fw-bold">{{ reserva.sala.nombre }}</span>
+                                            <span class="ms-2 text-muted small">(Cap: {{ reserva.sala.capacidad
+                                                }})</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-2">
+                                        <div class="d-flex flex-column">
+                                            <span class="fw-bold">{{ reserva.fecha.strftime('%d/%m/%Y') }}</span>
+                                            <span class="text-muted" style="font-size: 0.7rem;">{{ reserva.bloque
+                                                }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-2 text-center">
+                                        {% if reserva.estado == 'aprobada' %}
+                                        <span
+                                            class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-1 w-75 py-1">APROBADA</span>
+                                        {% elif reserva.estado == 'pendiente' %}
+                                        <span
+                                            class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-1 w-75 py-1"
+                                            style="color: #b45309 !important;">PENDIENTE</span>
+                                        {% elif reserva.estado == 'rechazada' %}
+                                        <span
+                                            class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-1 w-75 py-1">RECHAZADA</span>
+                                        {% else %}
+                                        <span
+                                            class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-1 w-75 py-1">{{
+                                            reserva.estado|upper }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-3 py-2 text-end">
+                                        <button
+                                            class="btn btn-sm btn-light border p-1 rounded hover-bg-light shadow-sm text-secondary"
+                                            title="Detalles">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="d-flex flex-column align-items-center justify-content-center py-5 text-muted">
+                        <i class="bi bi-clipboard-data opacity-50 mb-2" style="font-size: 2rem;"></i>
+                        <span class="fw-medium text-uppercase ls-widest" style="font-size: 0.75rem;">Sin registros
+                            activos</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & Stats -->
+        <div class="col-lg-3 d-flex flex-column gap-3">
+            <!-- Acciones Rápidas (Compactas) -->
+            <div class="card card-premium border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom pt-3 pb-2 px-3">
+                    <h6 class="fw-bold text-dark mb-0 fs-6">Control Operativo</h6>
+                </div>
+                <div class="card-body p-2">
+                    <div class="list-group list-group-flush border-0">
+                        <a href="{{ url_for('main.calendario') }}"
+                            class="list-group-item list-group-item-action border-0 rounded-2 d-flex align-items-center mb-1 py-2">
+                            <i class="bi bi-calendar-range text-primary me-3"></i>
+                            <span class="fw-medium" style="font-size: 0.8rem;">Visor General</span>
+                        </a>
+                        <a href="{{ url_for('main.mis_reservas') }}"
+                            class="list-group-item list-group-item-action border-0 rounded-2 d-flex align-items-center mb-1 py-2">
+                            <i class="bi bi-card-checklist text-secondary me-3"></i>
+                            <span class="fw-medium" style="font-size: 0.8rem;">Histórico Personal</span>
+                        </a>
+                        {% if current_user.is_coordinador() %}
+                        <a href="{{ url_for('reports.estadisticas') }}"
+                            class="list-group-item list-group-item-action border-0 rounded-2 d-flex align-items-center mb-1 py-2">
+                            <i class="bi bi-file-earmark-bar-graph text-info me-3"></i>
+                            <span class="fw-medium" style="font-size: 0.8rem;">Análisis Informes</span>
+                        </a>
+                        <a href="{{ url_for('admin.panel') }}"
+                            class="list-group-item list-group-item-action border-0 rounded-2 d-flex align-items-center py-2">
+                            <i class="bi bi-shield-lock text-danger me-3"></i>
+                            <span class="fw-medium" style="font-size: 0.8rem;">Admin Center</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Heatmap / Distribución (Visual Fix) -->
+            <div class="card card-premium border-0 shadow-sm flex-grow-1">
+                <div class="card-header bg-white border-bottom pt-3 pb-2 px-3">
+                    <h6 class="fw-bold text-dark mb-0 fs-6">Top Recursos</h6>
+                </div>
+                <div class="card-body p-3">
+                    {% if salas_populares %}
+                    <div class="d-flex flex-column gap-2">
+                        {% for sala, total in salas_populares[:3] %}
+                        <div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-bold text-dark text-truncate"
+                                    style="font-size: 0.75rem; max-width: 70%;">{{ sala }}</span>
+                                <span class="text-secondary fw-bold" style="font-size: 0.75rem;">{{ total }} ({{
+                                    (total/mis_reservas_count*100)|int if mis_reservas_count > 0 else 0 }}%)</span>
+                            </div>
+                            <div class="progress bg-secondary bg-opacity-10" style="height: 4px;">
+                                <div class="progress-bar bg-primary rounded"
+                                    style="width: {{ (total/mis_reservas_count*100) if mis_reservas_count > 0 else 0 }}%">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3 text-muted">
+                        <span style="font-size: 0.75rem;">Datos insuficientes</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Analytical Dashboard Specific Styles */
+    .analytical-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .analytical-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    }
+
+    .hover-scale {
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.02);
+    }
+
+    .hover-bg-light:hover {
+        background-color: #f8fafc;
+    }
+
+    .ls-widest {
+        letter-spacing: 0.1em;
+    }
+
+    /* Font sizes refinements for dense analytical look */
+    .table-sm th,
+    .table-sm td {
+        padding-top: 0.4rem;
+        padding-bottom: 0.4rem;
+    }
+
+    /* Dark Mode Adjustments */
+    [data-bs-theme="dark"] .bg-light {
+        background-color: #1e293b !important;
+    }
+
+    [data-bs-theme="dark"] .text-dark {
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .border-bottom,
+    [data-bs-theme="dark"] .border {
+        border-color: #334155 !important;
+    }
+
+    [data-bs-theme="dark"] .hover-bg-light:hover,
+    [data-bs-theme="dark"] .list-group-item-action:hover {
+        background-color: #334155 !important;
+    }
+</style>
+{% endblock %}

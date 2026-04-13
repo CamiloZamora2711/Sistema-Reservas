@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block title %}Calendario - SSR 2026{% endblock %}
+
+{% block extra_css %}
+<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+<style>
+    /* Custom FullCalendar Premium Styles - Exact Match */
+    body {
+        background-color: #F8FAFC !important;
+        /* Soft gray/blue background for the entire page */
+    }
+
+    .fc-theme-standard td,
+    .fc-theme-standard th {
+        border-color: #F1F5F9;
+    }
+
+    .fc-view-harness {
+        background-color: #FFFFFF !important;
+    }
+
+    .fc-col-header-cell {
+        padding: 12px 0 8px 0 !important;
+        background-color: #FFFFFF;
+        border-bottom: 2px solid #E2E8F0 !important;
+    }
+
+    .fc-col-header-cell-cushion {
+        display: flex;
+        flex-direction: column;
+        text-transform: uppercase;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #94A3B8;
+        text-decoration: none !important;
+    }
+
+    .fc-col-header-cell-cushion .fc-day-number {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #1E293B;
+        margin-top: 2px;
+    }
+
+    .fc-day-today .fc-col-header-cell-cushion .fc-day-number {
+        color: #2563EB;
+        /* Blue for today */
+    }
+
+    .fc-timegrid-slot-label-cushion {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #94A3B8;
+        padding-right: 12px !important;
+    }
+
+    /* The Floating Event Card */
+    .fc-event {
+        border-radius: 12px !important;
+        border: none !important;
+        background-color: transparent !important;
+        overflow: visible !important;
+        padding: 2px;
+    }
+
+    .fc-event-main {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .custom-event-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        /* Soft drop shadow */
+        height: 100%;
+        padding: 10px;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid #F1F5F9;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .custom-event-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+        /* Lift shadow */
+    }
+
+    /* Colored left strip in the event */
+    .custom-event-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background-color: var(--event-color);
+    }
+
+    /* Hover effects for filters */
+    .filter-item {
+        transition: background-color 0.2s;
+    }
+
+    .filter-item:hover {
+        background-color: #F8FAFC;
+    }
+
+    .filter-item.active {
+        background-color: #EFF6FF !important;
+    }
+
+    .filter-item.active .filter-name {
+        color: #1E40AF !important;
+        font-weight: 700 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-4" style="background-color: #F8FAFC;">
+    <div class="row g-4">
+
+        <!-- ==================== LEFT SIDEBAR COLUMN ==================== -->
+        <div class="col-12 col-lg-3">
+
+            <!-- Nueva Reserva Button -->
+            <a href="{{ url_for('main.nueva_reserva') }}"
+                class="btn btn-primary w-100 rounded-pill py-2 mb-4 d-flex justify-content-center align-items-center shadow-sm"
+                style="font-size: 0.95rem; font-weight: 600; background-color: #1D4ED8; border: none;">
+                <i class="bi bi-plus-circle me-2"></i> Nueva Reserva
+            </a>
+
+            <!-- Mini Calendar Wrapper (Mockup for aesthetics) -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark">Marzo 2026</h6>
+                        <div>
+                            <i class="bi bi-chevron-left text-muted me-2"
+                                style="cursor: pointer; font-size: 0.8rem;"></i>
+                            <i class="bi bi-chevron-right text-muted" style="cursor: pointer; font-size: 0.8rem;"></i>
+                        </div>
+                    </div>
+                    <div class="d-grid text-center text-muted fw-bold mb-2"
+                        style="grid-template-columns: repeat(7, 1fr); font-size: 0.65rem;">
+                        <div>D</div>
+                        <div>L</div>
+                        <div>M</div>
+                        <div>M</div>
+                        <div>J</div>
+                        <div>V</div>
+                        <div>S</div>
+                    </div>
+                    <div class="d-grid text-center fw-medium text-dark"
+                        style="grid-template-columns: repeat(7, 1fr); font-size: 0.8rem; row-gap: 12px;">
+                        <div class="text-muted">24</div>
+                        <div class="text-muted">25</div>
+                        <div class="text-muted">26</div>
+                        <div>1</div>
+                        <div>2</div>
+                        <div>3</div>
+                        <div>4</div>
+
+                        <!-- Today pill mockup -->
+                        <div class="d-flex align-items-center justify-content-center mx-auto rounded-circle"
+                            style="width: 24px; height: 24px; background-color: #EFF6FF; color: #2563EB; font-weight: 700;">
+                            5</div>
+                        <div>6</div>
+                        <div>7</div>
+                        <div>8</div>
+                        <div>9</div>
+                        <div>10</div>
+                        <div>11</div>
+
+                        <div>12</div>
+                        <div>13</div>
+                        <div>14</div>
+                        <div>15</div>
+                        <div>16</div>
+                        <div>17</div>
+                        <div>18</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros de Espacios -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Filtros de Espacios</h6>
+                    <p class="text-muted small mb-3" style="font-size: 0.75rem;">Filtrar por tipo de salón</p>
+
+                    <ul class="list-unstyled mb-0" id="filtroSalasLista">
+                        <!-- All Spaces -->
+                        <li class="filter-item p-2 rounded-3 mb-1 cursor-pointer d-flex justify-content-between align-items-center active"
+                            data-sala-id="">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-building me-3 text-primary"></i>
+                                <span class="filter-name fw-medium small text-dark">Todos los espacios</span>
+                            </div>
+                            <!-- Active Dot -->
+                            <div class="rounded-circle dot-indicator"
+                                style="width: 6px; height: 6px; background-color: #2563EB;"></div>
+                        </li>
+
+                        <!-- Dynamic Spaces -->
+                        {% for sala in salas %}
+                        <li class="filter-item p-2 rounded-3 mb-1 cursor-pointer d-flex justify-content-between align-items-center"
+                            data-sala-id="{{ sala.id }}">
+                            <div class="d-flex align-items-center text-secondary">
+                                <i class="bi bi-door-open me-3 text-muted"></i>
+                                <span class="filter-name fw-medium small text-dark">{{ sala.nombre }}</span>
+                            </div>
+                            <!-- Hidden dot until active, or could color code it -->
+                            <div class="rounded-circle dot-indicator d-none set-bg-color" data-color="{{ sala.color }}"
+                                style="width: 6px; height: 6px;"></div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Docentes Favoritos -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3 text-dark" style="font-size: 0.95rem;">Docentes Favoritos</h6>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle d-flex justify-content-center align-items-center me-3"
+                            style="width: 32px; height: 32px; background-color: #ECFCCB; color: #4D7C0F; font-weight: 600; font-size: 0.8rem;">
+                            A</div>
+                        <span class="fw-medium text-dark small">Ana Martínez</span>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle d-flex justify-content-center align-items-center me-3"
+                            style="width: 32px; height: 32px; background-color: #DCFCE7; color: #15803D; font-weight: 600; font-size: 0.8rem;">
+                            C</div>
+                        <span class="fw-medium text-dark small">Carlos Ruiz</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ==================== MAIN FULLCALENDAR COLUMN ==================== -->
+        <div class="col-12 col-lg-9">
+
+            <!-- Custom Header -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 ps-2">
+                <div>
+                    <h2 class="fw-bolder mb-1 text-dark" id="calendarTitle" style="letter-spacing: -0.5px;">Semana
+                        Actual</h2>
+                    <p class="text-secondary fw-medium mb-0" id="calendarDateRange" style="font-size: 0.9rem;">Cargando
+                        fechas...</p>
+                </div>
+
+                <!-- Pill Toggle Buttons -->
+                <div class="mt-3 mt-md-0 d-flex bg-white rounded-pill p-1 shadow-sm border"
+                    style="font-size: 0.85rem; font-weight: 700;">
+                    <button class="btn btn-sm rounded-pill px-4 view-btn text-secondary fw-bold" data-view="timeGridDay"
+                        style="border: none;">Día</button>
+                    <button class="btn btn-sm rounded-pill px-4 view-btn btn-primary fw-bold shadow-sm"
+                        data-view="timeGridWeek" style="border: none; background-color: #1D4ED8;">Semana</button>
+                    <button class="btn btn-sm rounded-pill px-4 view-btn text-secondary fw-bold"
+                        data-view="dayGridMonth" style="border: none;">Mes</button>
+                    <button class="btn btn-sm rounded-pill px-4 view-btn text-secondary fw-bold" data-view="listWeek"
+                        style="border: none;">Agenda</button>
+                </div>
+            </div>
+
+            <!-- Calendar Container -->
+            <div class="card border-0 shadow-sm overflow-hidden mb-3" style="border-radius: 16px;">
+                <div class="card-body p-0">
+                    <div id="calendar" class="p-0"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Master Legend -->
+            <div class="d-flex align-items-center pb-2 pt-3 px-2 border-top mt-4">
+                <span class="text-muted fw-bold text-uppercase me-4"
+                    style="letter-spacing: 0.5px; font-size: 0.70rem;">REFERENCIAS:</span>
+                <div class="d-flex flex-wrap gap-4">
+                    {% for sala in salas %}
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-circle me-2 set-bg-color" data-color="{{ sala.color }}"
+                            style="width: 8px; height: 8px;"></div>
+                        <span class="fw-bold text-secondary" style="font-size: 0.75rem;">{{ sala.nombre }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <!-- Trademark System -->
+                <div class="ms-auto d-none d-md-flex align-items-center text-muted" style="font-size: 0.75rem;">
+                    <span>Sistema de Gestión Escolar v2.4.0 (SSR 2026)</span>
+                    <i class="bi bi-question-circle ms-3 fs-6"></i>
+                    <i class="bi bi-printer ms-2 fs-6"></i>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalles Estilizado (Keep the functional modal) -->
+<div class="modal fade" id="modalDetalles" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg overflow-hidden" style="border-radius: 16px;">
+            <div class="modal-header border-0 pb-0 pt-4 px-4 position-relative">
+                <div id="modalEventColorBadge" class="position-absolute top-0 start-0 w-100"
+                    style="height: 6px; background-color: var(--bs-primary);"></div>
+                <div class="d-flex align-items-center w-100">
+                    <div>
+                        <h5 class="modal-title fw-bolder text-dark mb-0 fs-4" id="modalSalaTitulo">Detalles</h5>
+                        <p class="text-muted small fw-medium mb-0" id="modalFechaHora">Fecha y Hora</p>
+                    </div>
+                    <button type="button" class="btn-close ms-auto bg-light rounded-circle p-2"
+                        data-bs-dismiss="modal"></button>
+                </div>
+            </div>
+            <div class="modal-body p-4" id="modalDetallesBody">
+                <!-- Contenido dinámico -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/es.global.min.js'></script>
+<script id="eventos-data" type="application/json">
+    {{ eventos | tojson | safe }}
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Fix for IDE CSS Parsers false positives
+        document.querySelectorAll('.set-bg-color').forEach(el => {
+            el.style.backgroundColor = el.dataset.color;
+        });
+
+        const calendarEl = document.getElementById('calendar');
+
+        // Cargar eventos del backend
+        const rawEventos = JSON.parse(document.getElementById('eventos-data').textContent);
+
+        const eventos = rawEventos.map(evt => {
+            const originalColor = evt.backgroundColor || '#2563EB'; // Blue as default fallback
+            return {
+                ...evt,
+                backgroundColor: 'transparent',
+                borderColor: 'transparent',
+                extendedProps: {
+                    ...evt.extendedProps,
+                    salaColor: originalColor
+                }
+            };
+        });
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            locale: 'es',
+            headerToolbar: false, // We use our custom header
+            slotMinTime: '08:00:00',
+            slotMaxTime: '18:00:00',
+            allDaySlot: false,
+            height: 700,
+            expandRows: true,
+            nowIndicator: true,
+            themeSystem: 'standard',
+            events: eventos,
+
+            // Format column headers exactly like the design (e.g. JUE 05, then big 05)
+            dayHeaderContent: function (arg) {
+                // Return custom HTML for the headers
+                const date = arg.date;
+                const weekday = date.toLocaleDateString('es-ES', { weekday: 'short' }).toUpperCase();
+                const dayStr = String(date.getDate()).padStart(2, '0');
+
+                return {
+                    html: `
+                        <div class="fc-col-header-cell-cushion text-center w-100">
+                            <span>${weekday}</span>
+                            <span class="fc-day-number">${dayStr}</span>
+                        </div>
+                    `
+                };
+            },
+
+            // Callback when dates are set to update our custom header
+            datesSet: function (info) {
+                const titleEl = document.getElementById('calendarTitle');
+                const rangeEl = document.getElementById('calendarDateRange');
+
+                if (info.view.type === 'timeGridWeek') {
+                    titleEl.textContent = 'Semana Actual';
+                } else if (info.view.type === 'dayGridMonth') {
+                    titleEl.textContent = info.view.title;
+                } else if (info.view.type === 'timeGridDay') {
+                    titleEl.textContent = 'Día Actual';
+                } else {
+                    titleEl.textContent = info.view.title;
+                }
+
+                const startDate = info.start.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' });
+                // We show exclusive end date if it falls on the start of next week context. For fullcalendar timeGridWeek end is inclusive for users, so we substract a ms
+                const endDateObj = new Date(info.end.getTime() - 1);
+                const endDate = endDateObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+                // Capitalize properly
+                const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+                if (info.view.type === 'dayGridMonth') {
+                    rangeEl.textContent = 'Mes completo';
+                } else {
+                    rangeEl.textContent = `${capitalize(startDate)} al ${capitalize(endDate)}`;
+                }
+            },
+
+            eventContent: function (arg) {
+                const props = arg.event.extendedProps;
+                const salaColor = props.salaColor;
+                const title = arg.event.title;
+                const userText = props.usuario ? props.usuario.split(' ')[0] : 'Reserva';
+                const initial = userText ? userText.charAt(0).toUpperCase() : '?';
+
+                // Formatear tiempos
+                const formatTime = (date) => {
+                    return date ? date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '';
+                };
+                const timeStr = `${formatTime(arg.event.start)} - ${formatTime(arg.event.end)}`;
+
+                // We construct the custom card matching the image
+                return {
+                    html: `
+                        <div class="custom-event-card" style="--event-color: ${salaColor};">
+                            <!-- Pill Label Top Left -->
+                            <div class="badge rounded-pill d-inline-block fw-bold mb-1 text-truncate" style="max-width: 80%; background-color: ${salaColor}20; color: ${salaColor}; font-size: 0.55rem; letter-spacing: 0.5px; padding: 4px 8px;">
+                                ${(props.sala || 'SALA').toUpperCase()}
+                            </div>
+                            
+                            <!-- Little User Avatar Top Right -->
+                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-white shadow-sm position-absolute" style="width: 22px; height: 22px; top: 8px; right: 8px; font-size: 0.6rem; font-weight: 800; color: #64748B; border: 1px solid #F1F5F9;">
+                                <img src="https://ui-avatars.com/api/?name=${userText}&background=random&color=fff&size=22" class="rounded-circle" style="width: 100%; height: 100%;">
+                            </div>
+
+                            <!-- Title -->
+                            <div class="fw-bolder text-dark mb-1 mt-1 text-truncate" style="font-size: 0.75rem; line-height: 1.25;">
+                                ${title}
+                            </div>
+                            
+                            <!-- Time -->
+                            <div class="text-secondary fw-semibold mb-2" style="font-size: 0.65rem;">
+                                ${timeStr}
+                            </div>
+                            
+                            <!-- Footer row (Optional e.g. Attendees) -->
+                            <div class="text-muted d-flex align-items-center text-truncate" style="font-size: 0.65rem;">
+                                <i class="bi bi-people-fill me-1"></i> ${props.motivo ? props.motivo : 'Actividad'}
+                            </div>
+                        </div>
+                    `
+                };
+            },
+            eventClick: function (info) {
+                const props = info.event.extendedProps;
+                const bgColor = props.salaColor;
+
+                const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const dateStr = info.event.start.toLocaleDateString('es-ES', dateOpts);
+                const timeStr = `${info.event.start.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${info.event.end ? info.event.end.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : 'Fin'}`;
+
+                document.getElementById('modalEventColorBadge').style.backgroundColor = bgColor;
+                document.getElementById('modalSalaTitulo').textContent = props.sala || 'Reserva';
+                document.getElementById('modalFechaHora').textContent = `${dateStr} | ${timeStr}`;
+
+                const html = `
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;">Usuario Solicitante</span>
+                                <p class="fw-bolder fs-5 text-dark mb-0">${props.usuario}</p>
+                            </div>
+                            
+                            <div class="col-12 mt-4">
+                                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;">Motivo / Actividad</span>
+                                <div class="bg-light p-3 rounded-4 mt-2 border border-light">
+                                    <p class="text-dark mb-0 fw-medium">${props.motivo}</p>
+                                </div>
+                            </div>
+                            
+                            ${props.notas ? `
+                            <div class="col-12 mt-4">
+                                <span class="text-muted small fw-bold text-uppercase" style="letter-spacing: 0.5px;">Notas Adicionales</span>
+                                <p class="text-secondary mb-0 small mt-1 pl-2 border-start border-3 border-secondary">${props.notas}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                document.getElementById('modalDetallesBody').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('modalDetalles')).show();
+            }
+        });
+
+        calendar.render();
+
+        // ---- UI Interactivity ----
+
+        // View Toggles
+        const viewBtns = document.querySelectorAll('.view-btn');
+        viewBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                // Update UI active state
+                viewBtns.forEach(b => {
+                    b.classList.remove('btn-primary', 'shadow-sm', 'text-white');
+                    b.classList.add('text-secondary');
+                    b.style.backgroundColor = 'transparent';
+                });
+
+                this.classList.remove('text-secondary');
+                this.classList.add('btn-primary', 'shadow-sm', 'text-white');
+                this.style.backgroundColor = '#1D4ED8';
+
+                // Tell Calendar
+                calendar.changeView(this.dataset.view);
+            });
+        });
+
+        // Custom Filters List Logic
+        const filterItems = document.querySelectorAll('.filter-item');
+        filterItems.forEach(item => {
+            item.addEventListener('click', function () {
+                // Update UI active states
+                filterItems.forEach(fi => {
+                    fi.classList.remove('active');
+                    const dot = fi.querySelector('.dot-indicator');
+                    if (fi.dataset.salaId) dot.classList.add('d-none'); // Hide specific colored dots when inactive
+                });
+
+                this.classList.add('active');
+                const myDot = this.querySelector('.dot-indicator');
+                if (myDot) myDot.classList.remove('d-none');
+
+                // Filter Calendar Source
+                const salaId = this.dataset.salaId;
+                if (salaId) {
+                    const eventosFiltrados = eventos.filter(e => e.extendedProps.sala_id == salaId);
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(eventosFiltrados);
+                } else {
+                    calendar.removeAllEvents();
+                    calendar.addEventSource(eventos);
+                }
+            });
+        });
+
+    });
+</script>
+{% endblock %}

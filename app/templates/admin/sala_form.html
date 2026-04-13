@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }} - SSR 2026{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-door-open"></i> {{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="nombre" class="form-label fw-bold">Nombre de la Sala</label>
+                                {{ form.nombre(class="form-control", placeholder="Ej: Sala de Computación") }}
+                                {% if form.nombre.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.nombre.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label for="capacidad" class="form-label fw-bold">Capacidad</label>
+                                {{ form.capacidad(class="form-control", placeholder="30") }}
+                                {% if form.capacidad.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.capacidad.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo" class="form-label fw-bold">Tipo de Sala *</label>
+                                <select class="form-select" id="tipo" name="tipo" required>
+                                    <option value="">Seleccione un tipo</option>
+                                    <option value="basica" {% if form.tipo.data=='basica' %}selected{% endif %}>
+                                        Computación Básica (1° a 8° Básico)
+                                    </option>
+                                    <option value="media" {% if form.tipo.data=='media' %}selected{% endif %}>
+                                        Computación Media (1° a 4° Medio)
+                                    </option>
+                                    <option value="normal" {% if form.tipo.data=='normal' %}selected{% endif %}>
+                                        Normal (Sin restricción de curso)
+                                    </option>
+                                </select>
+                                <div class="form-text">
+                                    <strong>Computación Básica/Media:</strong> Aplican reglas de prioridad por nivel de
+                                    curso.<br>
+                                    <strong>Normal:</strong> Aprobación automática para todos los cursos.
+                                </div>
+                                {% if form.tipo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.tipo.errors %}{{ error }}{% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="color" class="form-label fw-bold">Color (Hex)</label>
+                                <div class="input-group">
+                                    {{ form.color(class="form-control", type="color") }}
+                                    <input type="text" class="form-control" id="colorText"
+                                        value="{{ form.color.data or '#0d6efd' }}" readonly>
+                                </div>
+                                <div class="form-text">Color para el calendario</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label fw-bold">Descripción (Opcional)</label>
+                            {{ form.descripcion(class="form-control", rows="3", placeholder="Descripción de la sala...")
+                            }}
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.activa(class="form-check-input", id="activa") }}
+                                <label class="form-check-label" for="activa">
+                                    Sala Activa
+                                </label>
+                                <div class="form-text">Solo las salas activas están disponibles para reservas</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('admin.salas') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const colorInput = document.getElementById('color');
+        const colorText = document.getElementById('colorText');
+
+        if (colorInput) {
+            colorInput.addEventListener('input', function () {
+                colorText.value = this.value;
+            });
+        }
+    });
+</script>
+{% endblock %}

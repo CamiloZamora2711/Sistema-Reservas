@@ -1,0 +1,676 @@
+{% extends "base.html" %}
+
+{% block title %}Agendar Espacio - SSR 2026{% endblock %}
+
+{% block content %}
+<!-- Google Fonts & Material Symbols for Stitch look -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+
+<style>
+    .stitch-font {
+        font-family: 'Manrope', sans-serif;
+    }
+
+    /* Layout utilities */
+    @media (min-width: 992px) {
+        .sticky-column {
+            position: sticky;
+            top: 6rem;
+            max-height: calc(100vh - 7rem);
+            overflow-y: auto;
+        }
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    /* Custom Cards Stitch-Style */
+    .card-sala {
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        cursor: pointer;
+        background-color: var(--bs-body-bg);
+    }
+
+    .card-sala:hover {
+        border-color: rgba(var(--bs-primary-rgb), 0.5);
+    }
+
+    .card-sala.selected {
+        border-color: var(--bs-primary);
+        background-color: rgba(var(--bs-primary-rgb), 0.05);
+    }
+
+    .sala-img-wrapper {
+        aspect-ratio: 16/9;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        position: relative;
+        background-color: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Input & Chip Styles */
+    .stitch-input {
+        background-color: rgba(var(--bs-secondary-rgb), 0.05);
+        border: 1px solid rgba(var(--bs-secondary-rgb), 0.1);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .stitch-input:focus {
+        background-color: var(--bs-body-bg);
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.15);
+    }
+
+    .bloque-chip {
+        transition: all 0.2s ease;
+        border: 1px solid rgba(var(--bs-secondary-rgb), 0.2);
+        cursor: pointer;
+    }
+
+    .bloque-chip:hover:not(.disabled) {
+        border-color: rgba(var(--bs-primary-rgb), 0.5);
+    }
+
+    .bloque-chip.selected {
+        border-color: var(--bs-primary) !important;
+        background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+        color: var(--bs-primary) !important;
+    }
+
+    .bloque-chip.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: rgba(var(--bs-secondary-rgb), 0.05);
+    }
+
+    /* Ticket Summary Card */
+    .ticket-card {
+        background-color: #1a1635;
+        /* Dark Stitch Theme */
+        color: #fff;
+        position: relative;
+    }
+
+    .ticket-glow {
+        position: absolute;
+        top: -6rem;
+        right: -6rem;
+        width: 12rem;
+        height: 12rem;
+        background-color: rgba(var(--bs-primary-rgb), 0.3);
+        filter: blur(40px);
+        border-radius: 50%;
+    }
+
+    /* Dark Mode variables */
+    [data-bs-theme="dark"] .card-sala {
+        background-color: #1e293b;
+        border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    [data-bs-theme="dark"] .card-sala:hover {
+        border-color: #475569;
+    }
+
+    [data-bs-theme="dark"] .card-sala.selected {
+        background-color: rgba(var(--bs-primary-rgb), 0.15);
+        border-color: var(--bs-primary);
+    }
+
+    [data-bs-theme="dark"] .sala-img-wrapper {
+        background-color: #0f172a;
+    }
+
+    [data-bs-theme="dark"] .stitch-input {
+        background-color: #0f172a;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+
+    [data-bs-theme="dark"] .bloque-chip {
+        background-color: #1e293b;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+
+    [data-bs-theme="dark"] .bloque-chip:hover:not(.disabled) {
+        border-color: var(--bs-primary);
+    }
+
+    [data-bs-theme="dark"] .bloque-chip.disabled {
+        background-color: #0f172a;
+        border-color: transparent;
+    }
+</style>
+
+<div class="container-fluid px-2 py-4 stitch-font" style="max-width: 1440px;">
+
+    <!-- Top Header -->
+    <div class="d-flex align-items-center mb-5 pb-3 border-bottom px-lg-4">
+        <a href="{{ url_for('main.dashboard') }}"
+            class="btn btn-light rounded-circle text-secondary d-flex align-items-center justify-content-center me-3 shadow-sm border"
+            style="width: 44px; height: 44px;">
+            <span class="material-symbols-outlined">arrow_back</span>
+        </a>
+        <div>
+            <h1 class="fs-3 fw-bolder tracking-tight mb-0">Nueva Reserva</h1>
+            <p class="text-secondary small mb-0 fw-semibold">SSR 2026 Reservation System</p>
+        </div>
+    </div>
+
+    <!-- Main 2-Column Grid -->
+    <form method="POST" action="{{ url_for('main.nueva_reserva') }}" id="formReserva" class="px-lg-4">
+        {{ form.hidden_tag() }}
+        {{ form.sala_id(class="d-none", id="sala_id_hidden") }}
+
+        <div class="row g-4">
+
+            <!-- LEFT COLUMN (COL-7) -->
+            <div class="col-lg-7 d-flex flex-column gap-4">
+
+                <!-- Section 1: Salas -->
+                <section>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h3 class="fs-5 fw-bolder tracking-tight m-0">1. Selección de Sala</h3>
+                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-1 rounded-pill fw-semibold"
+                            style="font-size: 0.75rem;">
+                            Requerido
+                        </span>
+                    </div>
+
+                    <div class="row g-2" id="salaGrid">
+                        <!-- Populated via JS -->
+                        <div class="col-12 py-4 text-center">
+                            <div class="spinner-border spinner-border-sm text-primary"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <hr class="text-secondary opacity-25 m-0">
+
+                <!-- Section 2: Fecha & Detalles -->
+                <section>
+                    <h3 class="fs-5 fw-bolder tracking-tight mb-3">2. Fecha y Detalles</h3>
+
+                    <div class="card bg-white shadow-sm border rounded-4 p-3 p-lg-4">
+
+                        <div class="mb-3">
+                            <label class="fw-bold fs-6 mb-1 text-dark" style="font-size: 0.85rem !important;">Fecha a
+                                reservar</label>
+                            {% set hoy = now.strftime('%Y-%m-%d') %}
+                            {% set fecha_maxima = (now + timedelta(days=30)).strftime('%Y-%m-%d') %}
+                            <input type="date"
+                                class="form-control form-control-sm stitch-input fw-bold text-secondary py-2" id="fecha"
+                                name="fecha" required min="{{ hoy }}" max="{{ fecha_maxima }}">
+                            {% if form.fecha.errors %}
+                            <div class="text-danger small mt-1 fw-medium">{% for error in form.fecha.errors %}{{ error
+                                }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="fw-bold fs-6 mb-1 text-dark" style="font-size: 0.85rem !important;">Motivo de
+                                uso <span class="text-danger">*</span></label>
+                            {{ form.motivo(class="form-control form-control-sm stitch-input py-2", placeholder="Ej: Ej:
+                            Clase, Taller...", required=true) }}
+                            {% if form.motivo.errors %}
+                            <div class="text-danger small mt-1 fw-medium">{% for error in form.motivo.errors %}{{ error
+                                }}{% endfor %}</div>
+                            {% endif %}
+                        </div>
+
+                        {% if current_user.rol != 'administrativo' %}
+                        <div class="mb-3">
+                            <label class="fw-bold fs-6 mb-1 text-dark" style="font-size: 0.85rem !important;">Curso
+                                asistente (Opcional)</label>
+                            <div class="row g-2">
+                                <div class="col-8">
+                                    <select
+                                        class="form-select form-select-sm stitch-input py-2 text-secondary fw-semibold"
+                                        id="curso_nivel">
+                                        <option value="">Nivel...</option>
+                                        <optgroup label="Básica">
+                                            <option value="1B">1° Básico</option>
+                                            <option value="2B">2° Básico</option>
+                                            <option value="3B">3° Básico</option>
+                                            <option value="4B">4° Básico</option>
+                                            <option value="5B">5° Básico</option>
+                                            <option value="6B">6° Básico</option>
+                                            <option value="7B">7° Básico</option>
+                                            <option value="8B">8° Básico</option>
+                                        </optgroup>
+                                        <optgroup label="Media">
+                                            <option value="1M">1° Medio</option>
+                                            <option value="2M">2° Medio</option>
+                                            <option value="3M">3° Medio</option>
+                                            <option value="4M">4° Medio</option>
+                                        </optgroup>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <select
+                                        class="form-select form-select-sm stitch-input py-2 text-secondary fw-semibold"
+                                        id="curso_seccion">
+                                        <option value="">Letra</option>
+                                        <option value="A">A</option>
+                                        <option value="B">B</option>
+                                        <option value="C">C</option>
+                                    </select>
+                                </div>
+                            </div>
+                            {{ form.curso_asistente(id="curso_asistente_hidden", class="d-none") }}
+                        </div>
+                        {% endif %}
+
+                        <div>
+                            <label class="fw-bold fs-6 mb-1 text-dark"
+                                style="font-size: 0.85rem !important;">Información Adicional</label>
+                            {{ form.notas(class="form-control form-control-sm stitch-input p-2", rows="2",
+                            placeholder="Requerimientos técnicos, notas internas...") }}
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+
+            <!-- RIGHT COLUMN (COL-5) - STICKY -->
+            <div class="col-lg-5">
+                <div class="d-flex flex-column gap-3 sticky-column" style="padding-bottom: 2rem; top: 1rem;">
+
+                    <!-- Section 3: Bloques Horarios -->
+                    <section class="card bg-white shadow-sm border rounded-4 d-flex flex-column"
+                        style="max-height: 350px;">
+                        <div class="p-3 d-flex flex-column h-100" style="overflow-y: auto; overflow-x: hidden;">
+                            <div class="d-flex align-items-center justify-content-between mb-3 flex-shrink-0">
+                                <h3 class="fs-5 fw-bolder tracking-tight m-0">3. Bloques Horarios</h3>
+                                <span
+                                    class="badge bg-success bg-opacity-10 text-success text-uppercase fw-bold px-2 py-1"
+                                    style="font-size: 0.6rem; letter-spacing: 0.5px;">Disponibilidad</span>
+                            </div>
+
+                            <div id="bloquesContainer" class="row g-2 align-content-start">
+                                <div
+                                    class="col-12 text-center py-4 bg-light rounded-3 d-flex flex-column justify-content-center align-items-center">
+                                    <span
+                                        class="material-symbols-outlined fs-2 text-secondary opacity-50 mb-2">mouse</span>
+                                    <p class="text-secondary small fw-semibold m-0">Selecciona sala y fecha primero
+                                    </p>
+                                </div>
+                            </div>
+                            <input type="hidden" name="bloques" id="bloques">
+                            {% if form.bloques.errors %}
+                            <div class="text-danger small mt-1 fw-medium text-center">
+                                {% for error in form.bloques.errors %}<i class="bi bi-exclamation-circle me-1"></i>{{
+                                error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </section>
+
+                    <!-- Section 4: Resumen Ticket -->
+                    <section class="card ticket-card border-0 rounded-4 shadow-sm p-4">
+                        <div class="ticket-glow pointer-events-none"
+                            style="width: 8rem; height: 8rem; top: -3rem; right: -3rem;"></div>
+                        <div class="position-relative z-1">
+                            <h3 class="fs-6 fw-bold mb-3 d-flex align-items-center gap-2">
+                                <span class="material-symbols-outlined text-primary fs-5">receipt_long</span>
+                                Resumen de Reserva
+                            </h3>
+
+                            <div class="d-flex flex-column gap-2 mb-4">
+                                <div>
+                                    <p class="text-uppercase fw-bold text-white opacity-50 mb-0"
+                                        style="font-size: 0.6rem; letter-spacing: 1px;">Sala Seleccionada</p>
+                                    <p class="fw-bolder m-0 text-truncate" style="font-size: 0.95rem;" id="summarySala">
+                                        --</p>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <p class="text-uppercase fw-bold text-white opacity-50 mb-0"
+                                            style="font-size: 0.6rem; letter-spacing: 1px;">Fecha</p>
+                                        <p class="fw-bolder m-0" style="font-size: 0.95rem;" id="summaryFecha">--</p>
+                                    </div>
+                                    <div class="text-end border-start border-secondary border-opacity-25 ps-3">
+                                        <p class="text-uppercase fw-bold text-white opacity-50 mb-0"
+                                            style="font-size: 0.6rem; letter-spacing: 1px;">Horarios</p>
+                                        <p class="fw-bolder m-0 text-primary" style="font-size: 0.95rem;"
+                                            id="summaryBloques">0 selected</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btnSubmitFake"
+                                class="btn btn-primary bg-primary border-0 rounded-3 py-2 w-100 fw-bold d-flex justify-content-center align-items-center gap-2 disabled transition-all shadow-sm"
+                                style="font-size: 0.9rem;">
+                                Confirmar y Reservar
+                                <span class="material-symbols-outlined fs-5">arrow_forward</span>
+                            </button>
+                            <button type="submit" id="btnSubmitReal" class="d-none"></button>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<!-- Select Origen -->
+<select id="original_sala_id" class="d-none">
+    {% for choice in form.sala_id.choices %}
+    <option value="{{ choice[0] }}">{{ choice[1] }}</option>
+    {% endfor %}
+</select>
+
+<!-- Modales -->
+<div class="modal fade" id="reservaPendienteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-warning text-dark border-0 p-4">
+                <h5 class="modal-title fw-bold stitch-font"><i
+                        class="bi bi-exclamation-triangle-fill me-2 opacity-75"></i> Reserva en Revisión</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 stitch-font">
+                <p class="fs-5 text-dark fw-semibold">Tu solicitud requiere autorización previa.</p>
+                <div class="bg-light p-3 rounded-3 text-muted small">
+                    <ul class="mb-0 ps-3">
+                        <li>Tu curso no tiene prioridad o la reserva fue gestionada con menos de 24 horas de antelación.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0 justify-content-center">
+                <button type="button" class="btn btn-primary rounded-pill fw-semibold px-4"
+                    data-bs-dismiss="modal">Entendido, gracias</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reservaAprobadaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0 p-4">
+                <h5 class="modal-title fw-bold stitch-font"><i class="bi bi-check-circle-fill me-2 opacity-75"></i>
+                    ¡Todo Listo!</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 text-center stitch-font">
+                <div class="my-4"><i class="bi bi-emoji-smile fs-1 text-success"></i></div>
+                <h3 class="fw-bold text-dark mb-2">Reserva Confirmada</h3>
+                <p class="text-muted">Tu solicitud ha sido aprobada automáticamente.</p>
+            </div>
+            <div class="modal-footer border-0 bg-light justify-content-center">
+                <a href="{{ url_for('main.mis_reservas') }}" class="btn btn-outline-secondary rounded-pill px-4">Ver mis
+                    reservas</a>
+                <button type="button" class="btn btn-success rounded-pill px-5" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const originalSelect = document.getElementById('original_sala_id');
+        const hiddenSalaInput = document.getElementById('sala_id_hidden');
+        const salaGrid = document.getElementById('salaGrid');
+
+        const fechaInput = document.getElementById('fecha');
+        const bloquesContainer = document.getElementById('bloquesContainer');
+        const bloquesInput = document.getElementById('bloques');
+
+        const summarySala = document.getElementById('summarySala');
+        const summaryFecha = document.getElementById('summaryFecha');
+        const summaryBloques = document.getElementById('summaryBloques');
+        const btnSubmitFake = document.getElementById('btnSubmitFake');
+        const btnSubmitReal = document.getElementById('btnSubmitReal');
+
+        const motivoInput = document.getElementById('motivo');
+
+        // Render Cards (Stitch 2-Column layout)
+        function renderSalas() {
+            let html = '';
+            const options = Array.from(originalSelect.options);
+
+            options.forEach(opt => {
+                if (!opt.value || opt.value === '__None') return;
+
+                let nombreDisplay = opt.text;
+                let capDisplay = "ND";
+                const capMatch = opt.text.match(/\(Cap:\s*(\d+)\)/);
+                if (capMatch) {
+                    capDisplay = capMatch[1];
+                    nombreDisplay = opt.text.replace(/\(Cap:\s*\d+\)/, '').trim();
+                }
+
+                let icon = "door_open";
+                if (nombreDisplay.toLowerCase().includes('computación') || nombreDisplay.toLowerCase().includes('laboratorio')) icon = "computer";
+                else if (nombreDisplay.toLowerCase().includes('auditorio')) icon = "theater_comedy";
+                else if (nombreDisplay.toLowerCase().includes('gimnasio') || nombreDisplay.toLowerCase().includes('multicancha')) icon = "sports_basketball";
+                else if (nombreDisplay.toLowerCase().includes('creativa') || nombreDisplay.toLowerCase().includes('arte')) icon = "lightbulb";
+
+                html += `
+                <div class="col-6 col-lg-4">
+                    <div class="card card-sala shadow-sm rounded-4 p-2 p-md-3 h-100 position-relative" data-sala-id="${opt.value}" onclick="selectSala('${opt.value}', '${nombreDisplay.replace(/'/g, "\\'")}')">
+                        
+                        <div class="check-icon position-absolute top-0 end-0 mt-2 me-2 bg-primary text-white rounded-circle align-items-center justify-content-center shadow-sm" style="width: 20px; height: 20px; display: none; z-index: 10;">
+                            <span class="material-symbols-outlined" style="font-size: 12px;">check</span>
+                        </div>
+
+                        <div class="sala-img-wrapper mb-2 text-primary" style="aspect-ratio: 2/1; border-radius: 0.5rem;">
+                            <span class="material-symbols-outlined" style="font-size: 2rem; opacity: 0.5;">${icon}</span>
+                        </div>
+                        
+                        <div class="d-flex flex-column h-100 justify-content-end">
+                            <h5 class="fw-bold fs-6 text-dark mb-1" style="font-size: 0.9rem !important; line-height: 1.2;">${nombreDisplay}</h5>
+                            <div class="d-flex align-items-center justify-content-between mt-auto">
+                                <span class="d-flex align-items-center gap-1 text-secondary fw-semibold" style="font-size: 0.75rem;">
+                                    <span class="material-symbols-outlined" style="font-size: 14px;">groups</span>
+                                    ${capDisplay} Pers.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+            });
+            salaGrid.innerHTML = html;
+        }
+
+        renderSalas();
+
+        window.selectSala = function (id, name) {
+            hiddenSalaInput.value = id;
+
+            document.querySelectorAll('.card-sala').forEach(btn => {
+                btn.classList.remove('selected');
+                const check = btn.querySelector('.check-icon');
+                if (check) check.style.display = 'none';
+            });
+
+            const selected = document.querySelector(`.card-sala[data-sala-id="${id}"]`);
+            if (selected) {
+                selected.classList.add('selected');
+                const check = selected.querySelector('.check-icon');
+                if (check) check.style.display = 'flex';
+            }
+
+            summarySala.textContent = name;
+            checkFormValidity();
+            cargarBloques();
+        };
+
+        fechaInput.addEventListener('change', function () {
+            if (this.value) {
+                const [y, m, d] = this.value.split('-');
+                summaryFecha.textContent = `${d}/${m}/${y}`;
+            } else {
+                summaryFecha.textContent = '--';
+            }
+            checkFormValidity();
+            cargarBloques();
+        });
+
+        if (fechaInput.value) {
+            const [y, m, d] = fechaInput.value.split('-');
+            summaryFecha.textContent = `${d}/${m}/${y}`;
+        }
+
+        // Curso asistente
+        const cursoNivel = document.getElementById('curso_nivel');
+        const cursoSeccion = document.getElementById('curso_seccion');
+        const cursoAsistenteHidden = document.getElementById('curso_asistente_hidden');
+
+        if (cursoNivel && cursoSeccion && cursoAsistenteHidden) {
+            function actualizarCurso() {
+                cursoAsistenteHidden.value = (cursoNivel.value && cursoSeccion.value) ? cursoNivel.value + '-' + cursoSeccion.value : '';
+            }
+            cursoNivel.addEventListener('change', actualizarCurso);
+            cursoSeccion.addEventListener('change', actualizarCurso);
+        }
+
+        // Bloques
+        function cargarBloques() {
+            const salaId = hiddenSalaInput.value;
+            const fecha = fechaInput.value;
+
+            if (!salaId || !fecha) return;
+
+            bloquesContainer.innerHTML = `<div class="col-12 py-5 text-center"><div class="spinner-border text-primary spinner-border-sm"></div></div>`;
+            summaryBloques.textContent = '0 seleccionados';
+            bloquesInput.value = '';
+            checkFormValidity();
+
+            fetch(`/api/disponibilidad?sala_id=${salaId}&fecha=${fecha}`)
+                .then(response => response.json())
+                .then(data => {
+                    let html = '';
+                    if (data.bloques && data.bloques.length > 0) {
+                        data.bloques.forEach(b => {
+                            const val = b.bloque;
+                            const disponible = b.disponible;
+                            const info = b.info;
+
+                            if (disponible) {
+                                html += `
+                                <div class="col-sm-6">
+                                    <div class="bloque-chip card p-3 rounded-3 bg-white text-dark shadow-none w-100" data-bloque="${val}" onclick="toggleBloque(this, '${val}')">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <span class="fw-bold fs-6">${val}</span>
+                                            <span class="material-symbols-outlined check-mark text-secondary opacity-25" style="font-size: 18px;">radio_button_unchecked</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+                            } else {
+                                const occStr = info ? `${info.usuario.substring(0, 10)}..` : 'Ocupado';
+                                html += `
+                                <div class="col-sm-6">
+                                    <div class="bloque-chip disabled card p-3 rounded-3 w-100 shadow-none" title="Ocupado">
+                                        <div class="d-flex align-items-center justify-content-between text-secondary opacity-50">
+                                            <span class="fw-bold fs-6 text-decoration-line-through">${val}</span>
+                                            <span class="badge bg-secondary bg-opacity-25 text-secondary px-2 rounded-pill" style="font-size:0.65rem;">${occStr}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+                            }
+                        });
+                    } else {
+                        html = `<div class="col-12 text-center py-4"><span class="material-symbols-outlined fs-2 text-danger mb-2 opacity-50">event_busy</span><p class="text-danger fw-bold m-0">Sin horarios disponibles</p></div>`;
+                    }
+                    bloquesContainer.innerHTML = html;
+                }).catch(err => {
+                    bloquesContainer.innerHTML = `<div class="col-12 text-center py-4 text-danger">Error conectando al servidor.</div>`;
+                });
+        }
+
+        window.toggleBloque = function (element, val) {
+            element.classList.toggle('selected');
+            const icon = element.querySelector('.check-mark');
+
+            if (element.classList.contains('selected')) {
+                icon.textContent = "check_circle";
+                icon.classList.remove('text-secondary', 'opacity-25');
+                icon.classList.add('text-primary');
+            } else {
+                icon.textContent = "radio_button_unchecked";
+                icon.classList.add('text-secondary', 'opacity-25');
+                icon.classList.remove('text-primary');
+            }
+
+            const seledElements = document.querySelectorAll('.bloque-chip.selected');
+            const arr = Array.from(seledElements).map(el => el.getAttribute('data-bloque'));
+            bloquesInput.value = arr.join(',');
+
+            summaryBloques.textContent = `${arr.length} seleccionado${arr.length !== 1 ? 's' : ''}`;
+
+            checkFormValidity();
+        };
+
+        function checkFormValidity() {
+            const hasSala = hiddenSalaInput.value !== '';
+            const hasFecha = fechaInput.value !== '';
+            const hasBloques = bloquesInput.value !== '';
+            const mtv = motivoInput ? motivoInput.value.trim() : '';
+
+            if (hasSala && hasFecha && hasBloques && mtv.length > 0) {
+                btnSubmitFake.classList.remove('disabled');
+            } else {
+                btnSubmitFake.classList.add('disabled');
+            }
+        }
+
+        if (motivoInput) motivoInput.addEventListener('input', checkFormValidity);
+
+        btnSubmitFake.addEventListener('click', function (e) {
+            e.preventDefault();
+            if (!this.classList.contains('disabled')) {
+                const form = document.getElementById('formReserva');
+                if (form.checkValidity()) {
+                    this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Cargando...`;
+                    btnSubmitReal.click();
+                } else {
+                    form.reportValidity();
+                }
+            }
+        });
+
+        // Initialize edit/error fallback
+        if (hiddenSalaInput.value) {
+            const opt = Array.from(originalSelect.options).find(o => o.value === hiddenSalaInput.value);
+            if (opt) {
+                setTimeout(() => selectSala(hiddenSalaInput.value, opt.text.replace(/\(Cap:\s*\d+\)/, '').trim()), 100);
+            }
+        }
+
+        // Show Modals
+        {% if session.pop('mostrar_modal_pendiente', False) %}
+        var modal1 = new bootstrap.Modal(document.getElementById('reservaPendienteModal'));
+        modal1.show();
+        {% endif %}
+        {% if session.pop('mostrar_modal_aprobada', False) %}
+        var modal2 = new bootstrap.Modal(document.getElementById('reservaAprobadaModal'));
+        modal2.show();
+        {% endif %}
+    });
+</script>
+{% endblock %}
