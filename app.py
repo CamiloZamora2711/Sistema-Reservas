@@ -463,16 +463,8 @@ def index():
         sala_nombre = r[1]
         tipo = salas_disponibles.get(sala_nombre, {}).get("tipo", "otro")
 
-        color = {
-            "basica": "#ffc107",
-            "media": "#0d6efd",
-            "otro": "#6c757d"
-        }.get(tipo, "#6c757d")
-
-        if "Audiovisuales" in sala_nombre:
-            color = "#20c997"
-        elif "Biología" in sala_nombre:
-            color = "#6610f2"
+        # Usar el mismo color definido en salas_disponibles (igual que "Nuestras Salas")
+        color = salas_disponibles.get(sala_nombre, {}).get("color", "#6c757d")
 
         # Reservas pendientes se muestran en gris
         estado_reserva = r[6] if len(r) > 6 else 'aprobada'

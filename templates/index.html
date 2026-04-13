@@ -470,6 +470,7 @@ function actualizarCursoTipo() {
                 minute: '2-digit',
                 hour12: false
             },
+            hiddenDays: [0], // Ocultar domingo
             slotMinTime: '07:00:00',
             slotMaxTime: '19:00:00',
             allDaySlot: false,
@@ -513,25 +514,47 @@ function actualizarCursoTipo() {
                     info.el.setAttribute('title', `Sala: ${sala} | Bloque: ${bloque} | Docente: ${docente}`);
                 }
 
-                // Colores según el tipo de sala
-                if (info.event.backgroundColor === '#ffc107') {
-                    info.el.style.backgroundColor = '#ffc107';
-                    info.el.style.borderColor = '#ffc107';
-                } else if (info.event.backgroundColor === '#0d6efd') {
-                    info.el.style.backgroundColor = '#0d6efd';
-                    info.el.style.borderColor = '#0d6efd';
-                } else if (info.event.backgroundColor === '#20c997') {
-                    info.el.style.backgroundColor = '#20c997';
-                    info.el.style.borderColor = '#20c997';
-                } else if (info.event.backgroundColor === '#6610f2') {
-                    info.el.style.backgroundColor = '#6610f2';
-                    info.el.style.borderColor = '#6610f2';
-                }
-                
                 // Asegurar que el texto no se salga
                 info.el.style.overflow = 'hidden';
                 info.el.style.textOverflow = 'ellipsis';
                 info.el.style.whiteSpace = 'nowrap';
+            },
+
+            // POP UP al hacer clic en un evento
+            eventClick: function(info) {
+                const props = info.event.extendedProps;
+                const title  = info.event.title;
+                const sala   = title.split(' - ')[0] || '-';
+                const bloque = title.split(' - ')[1]?.split(' (')[0] || '-';
+                const docente = props.nombre || '-';
+                const curso   = props.curso_asistente || '-';
+                const tipo    = props.curso_tipo || '-';
+                const estado  = props.estado || 'aprobada';
+                const color   = info.event.backgroundColor || '#0d6efd';
+
+                // Fecha legible
+                const start = info.event.start;
+                const fechaStr = start ? start.toLocaleDateString('es-CL', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) : '-';
+                const horaStr  = start ? start.toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit', hour12:false}) : '';
+
+                // Badge de estado
+                const badgeClass = estado === 'aprobada' ? 'bg-success' : estado === 'pendiente' ? 'bg-warning text-dark' : 'bg-secondary';
+                const badgeText  = estado === 'aprobada' ? '✓ Aprobada' : estado === 'pendiente' ? '⏳ Pendiente' : estado;
+
+                document.getElementById('popupSala').textContent    = sala;
+                document.getElementById('popupDocente').textContent = docente;
+                document.getElementById('popupBloque').textContent  = bloque;
+                document.getElementById('popupFecha').textContent   = fechaStr;
+                document.getElementById('popupCurso').textContent   = curso + (tipo && tipo !== '-' ? ' (' + tipo + ')' : '');
+                const badge = document.getElementById('popupEstado');
+                badge.textContent = badgeText;
+                badge.className   = 'badge ' + badgeClass;
+
+                // Línea de color de la sala en el header del modal
+                document.getElementById('popupHeader').style.borderBottom = '4px solid ' + color;
+                document.getElementById('popupIconColor').style.color = color;
+
+                new bootstrap.Modal(document.getElementById('modalDetalleReserva')).show();
             }
         });
 
@@ -761,4 +784,75 @@ function actualizarCursoTipo() {
     </div>
   </div>
 </div>
+
+<!-- Modal Detalle de Reserva -->
+<div class="modal fade" id="modalDetalleReserva" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:14px; overflow:hidden;">
+      <div class="modal-header py-3" id="popupHeader" style="background:#f8f9fa; border-bottom: 4px solid #0d6efd;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-calendar-check fa-lg" id="popupIconColor" style="color:#0d6efd;"></i>
+          <h5 class="modal-title fw-bold mb-0">Detalle de Reserva</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body px-4 py-4">
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0f4ff;">
+              <i class="fas fa-door-open fa-lg text-primary mt-1"></i>
+              <div>
+                <div class="text-muted small fw-semibold">SALA</div>
+                <div class="fw-bold fs-6" id="popupSala">-</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0f9f4;">
+              <i class="fas fa-user-tie fa-lg text-success mt-1"></i>
+              <div>
+                <div class="text-muted small fw-semibold">DOCENTE</div>
+                <div class="fw-bold" id="popupDocente">-</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fff8f0;">
+              <i class="fas fa-graduation-cap fa-lg text-warning mt-1"></i>
+              <div>
+                <div class="text-muted small fw-semibold">CURSO</div>
+                <div class="fw-bold" id="popupCurso">-</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f8f0ff;">
+              <i class="fas fa-clock fa-lg text-purple mt-1" style="color:#6610f2;"></i>
+              <div>
+                <div class="text-muted small fw-semibold">BLOQUE</div>
+                <div class="fw-bold" id="popupBloque">-</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0f4ff;">
+              <i class="fas fa-calendar-day fa-lg text-info mt-1"></i>
+              <div>
+                <div class="text-muted small fw-semibold">FECHA</div>
+                <div class="fw-bold" id="popupFecha">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <span class="badge fs-6 px-4 py-2" id="popupEstado">-</span>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0 pb-3 justify-content-center">
+        <button type="button" class="btn btn-outline-secondary px-5" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
