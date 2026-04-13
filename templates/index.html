@@ -1,0 +1,764 @@
+{% extends "base.html" %}
+
+{% block title %}Sistema de Reservas - Inicio{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 10px;
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header {
+        background: white;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 600;
+        padding: 1rem 1.5rem;
+    }
+
+    /* CONTENEDOR DEL CALENDARIO - CORREGIDO */
+    .calendar-container {
+        height: 600px;
+        padding: 0.5rem;
+        overflow: hidden; /* Evita que se salga */
+    }
+
+    #calendar {
+        height: 100% !important;
+        width: 100% !important;
+        max-width: 100%;
+    }
+
+    /* Asegurar que FullCalendar se mantenga dentro */
+    .fc {
+        height: 100% !important;
+        max-width: 100%;
+        font-size: 0.85rem; /* Texto más pequeño para caber mejor */
+    }
+
+    .fc-view {
+        height: 100% !important;
+        max-width: 100%;
+    }
+
+    .fc-view-harness {
+        height: 100% !important;
+        max-width: 100%;
+    }
+
+    /* Ajustes específicos para la vista semanal */
+    .fc-timeGridWeek-view .fc-timegrid-slot {
+        height: 40px !important; /* Altura fija para las celdas */
+    }
+
+    .fc-timeGridWeek-view .fc-event {
+        font-size: 0.75rem; /* Texto más pequeño en eventos */
+        padding: 1px 3px;
+        margin: 1px;
+    }
+
+    .fc-timeGridWeek-view .fc-event-title {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Header del calendario más compacto */
+    .fc-header-toolbar {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .fc-toolbar-title {
+        font-size: 1.2rem !important;
+    }
+
+    .fc-button {
+        padding: 0.3rem 0.6rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Columnas de días más compactas */
+    .fc-timegrid-col {
+        min-width: 110px !important;
+    }
+
+    .fc-timegrid-axis {
+        width: 60px !important;
+    }
+
+    .btn-primary {
+        background: #3498db;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+    }
+
+    .form-control, .form-select {
+        border-radius: 5px;
+        padding: 0.75rem;
+    }
+
+    .bloque-option {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .bloque-option.ocupado {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .bloque-option.disponible {
+        background-color: #d1edff;
+        cursor: pointer;
+    }
+
+    .stats-card {
+        text-align: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 10px;
+    }
+
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #3498db;
+    }
+
+    /* Tooltip personalizado para eventos */
+    .event-tooltip {
+        position: absolute;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        z-index: 1000;
+        pointer-events: none;
+        max-width: 250px;
+        white-space: normal;
+        line-height: 1.4;
+    }
+
+    /* Responsive para móviles */
+    @media (max-width: 768px) {
+        .calendar-container {
+            height: 400px;
+            padding: 0.25rem;
+        }
+        
+        .fc {
+            font-size: 0.7rem;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1rem !important;
+        }
+        
+        .fc-timegrid-col {
+            min-width: 80px !important;
+        }
+        
+        .fc-timegrid-axis {
+            width: 50px !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 fw-bold mb-2">
+                    <i class="fas fa-calendar-alt me-2"></i>Sistema de Reservas de Salas
+                </h1>
+                <p class="mb-3">Gestiona y reserva tus espacios académicos de manera fácil y eficiente</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-clock me-1"></i>Reservas en tiempo real
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-check-circle me-1"></i>Confirmación inmediata
+                    </span>
+                    <button type="button" class="btn btn-warning fw-bold ms-md-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
+                        <i class="fas fa-plus-circle me-2"></i>Nueva Reserva
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4 mt-3 mt-md-0">
+                <div class="bg-white rounded-3 p-3 shadow-sm border-start border-danger border-5">
+                    <div class="d-flex align-items-center mb-2 text-danger">
+                        <i class="fas fa-history me-2"></i>
+                        <strong class="small uppercase ls-1">Recordatorio de Plazos</strong>
+                    </div>
+                    <p class="mb-0 text-dark small fw-medium" style="line-height: 1.4;">
+                        Recuerda que si reservas fuera de tu tipo de sala requieren <span class="text-danger fw-bold">48h de anticipación</span> para aprobación automática.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid px-4">
+    <!-- Sección de Nuestras Salas Disponibles (Ahora arriba y colorida) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0 text-primary fw-bold text-center">
+                        <i class="fas fa-building me-2"></i>Nuestras Salas Disponibles
+                    </h5>
+                </div>
+                <div class="card-body px-4 pb-4">
+                    <div class="row g-3">
+                        {% for sala, info in salas.items() %}
+                        <div class="col-md col-sm-6">
+                            <div class="p-3 bg-white rounded shadow-sm h-100 border-top border-4" style="border-top-color: {{ info.color }} !important;">
+                                <div class="mb-2">
+                                    <strong class="text-dark d-block" style="font-size: 0.95rem;">{{ sala }}</strong>
+                                    <span class="text-muted small"><i class="fas fa-users me-1"></i>Capacidad: {{ info.capacidad }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge px-2 py-1 small fw-normal" style="background-color: {{ info.color }}20; color: {{ info.color }}; border: 1px solid {{ info.color }}40;">
+                                        {{ info.tipo|title }}
+                                    </span>
+                                    <i class="fas fa-circle" style="color: {{ info.color }}; font-size: 0.6rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Calendario - OCUPANDO TODO EL ANCHO -->
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-calendar me-2"></i>
+                    Calendario de Reservas
+                    <small class="text-muted float-end">Vista semanal</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="calendar-container">
+                        <div id="calendar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- MODAL PARA NUEVA RESERVA -->
+<div class="modal fade" id="modalNuevaReserva" tabindex="-1" aria-labelledby="modalNuevaReservaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalNuevaReservaLabel">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    Realizar Nueva Reserva
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="POST" id="reservaForm">
+                    <div class="row">
+                        <!-- Columna Izquierda: Sala y Fecha -->
+                        <div class="col-md-6 border-end">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-door-open me-2 text-primary"></i>Sala *</label>
+                                <select class="form-select border-primary" id="sala" name="sala" required>
+                                    <option value="">Selecciona una sala...</option>
+                                    {% for sala, info in salas.items() %}
+                                    <option value="{{ sala }}" data-tipo="{{ info.tipo }}">
+                                        {{ sala }} ({{ info.capacidad }} personas)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-calendar-alt me-2 text-primary"></i>Fecha *</label>
+                                <input type="date" class="form-control border-primary" id="fecha" name="fecha" 
+                                       min="{{ fecha_min }}" max="{{ fecha_max }}" required>
+                                <small class="text-muted d-block mt-1">Máximo 30 días de anticipación</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold"><i class="fas fa-clock me-2 text-primary"></i>Bloques Horarios *</label>
+                                <div id="bloquesContainer" class="p-2 border rounded bg-light" style="max-height: 250px; overflow-y: auto;">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-info-circle mb-2"></i><br>Selecciona sala y fecha primero
+                                    </div>
+                                </div>
+                                <div id="bloquesInfo"></div>
+                            </div>
+                        </div>
+
+                        <!-- Columna Derecha: Docente y Curso -->
+                        <div class="col-md-6 ps-md-4">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-user-tie me-2 text-primary"></i>Docente *</label>
+                                <div class="position-relative" id="docenteWrapper">
+                                    <input type="text" class="form-control border-primary" id="nombre" name="nombre"
+                                           placeholder="Escribe para buscar docente..."
+                                           autocomplete="off" required>
+                                    <ul id="docenteDropdown" class="list-group position-absolute w-100 shadow-sm d-none"
+                                        style="z-index: 9999; max-height: 180px; overflow-y: auto; top: 100%; left: 0;">
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold"><i class="fas fa-graduation-cap me-2 text-primary"></i>Curso *</label>
+                                <div class="row g-2">
+                                    <div class="col-md-8">
+                                        <select class="form-select border-primary" id="curso_nivel" name="curso_nivel" required onchange="actualizarCursoTipo()">
+                                            <option value="">Seleccione nivel</option>
+                                            <optgroup label="Educación Básica">
+                                                <option value="1B">1° Básico</option>
+                                                <option value="2B">2° Básico</option>
+                                                <option value="3B">3° Básico</option>
+                                                <option value="4B">4° Básico</option>
+                                                <option value="5B">5° Básico</option>
+                                                <option value="6B">6° Básico</option>
+                                            </optgroup>
+                                            <optgroup label="Educación Media">
+                                                <option value="7B">7° Básico</option>
+                                                <option value="8B">8° Básico</option>
+                                                <option value="1M">1° Medio</option>
+                                                <option value="2M">2° Medio</option>
+                                                <option value="3M">3° Medio</option>
+                                                <option value="4M">4° Medio</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-select border-primary" id="curso_seccion" name="curso_seccion" required>
+                                            <option value="">Sección</option>
+                                            <option value="A">A</option>
+                                            <option value="B">B</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="curso_tipo" name="curso_tipo" value="">
+                            </div>
+
+                            <div class="alert alert-info mt-auto mb-0 py-3 small">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Recuerda que si reservas fuera de tu tipo de sala requieren <strong>48h de anticipación</strong> para aprobación automática.
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="reservaForm" class="btn btn-primary px-5 fw-bold">
+                    <i class="fas fa-check-circle me-2"></i>Confirmar Reserva
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const usuarios = {{ lista_usuarios | tojson }};
+    const input = document.getElementById('nombre');
+    const dropdown = document.getElementById('docenteDropdown');
+
+    input.addEventListener('input', function() {
+        if (!input || !dropdown) return;
+        const val = this.value.trim().toLowerCase();
+        dropdown.innerHTML = '';
+        if (!val) { dropdown.classList.add('d-none'); return; }
+        const filtrados = usuarios.filter(u => u.toLowerCase().includes(val));
+        if (filtrados.length === 0) { dropdown.classList.add('d-none'); return; }
+        filtrados.forEach(function(nombre) {
+            const li = document.createElement('li');
+            li.className = 'list-group-item list-group-item-action py-2 small';
+            li.style.cursor = 'pointer';
+            li.textContent = nombre;
+            li.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                input.value = nombre;
+                dropdown.classList.add('d-none');
+            });
+            dropdown.appendChild(li);
+        });
+        dropdown.classList.remove('d-none');
+    });
+
+    input.addEventListener('focus', function() {
+        if (this.value.trim()) input.dispatchEvent(new Event('input'));
+    });
+
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('docenteWrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            dropdown.classList.add('d-none');
+        }
+    });
+})();
+
+function actualizarCursoTipo() {
+    const nivel = document.getElementById('curso_nivel').value;
+    const esBasica = ['1B','2B','3B','4B','5B','6B'].includes(nivel);
+    document.getElementById('curso_tipo').value = esBasica ? 'basica' : (nivel ? 'media' : '');
+}
+</script>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/es.js"></script>
+<script>
+    // CONFIGURACIÓN MEJORADA DEL CALENDARIO
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Inicializando calendario...');
+        
+        const calendarEl = document.getElementById('calendar');
+        
+        if (!calendarEl) {
+            console.error('No se encontró el elemento del calendario');
+            return;
+        }
+
+        // Crear tooltip personalizado
+        const tooltip = document.createElement('div');
+        tooltip.className = 'event-tooltip';
+        tooltip.style.display = 'none';
+        document.body.appendChild(tooltip);
+
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            locale: 'es',
+            headerToolbar: {
+                left: 'prev,next',
+                center: 'title',
+                right: 'timeGridWeek,timeGridDay today'
+            },
+            events: {{ eventos|tojson }},
+            eventTimeFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            slotMinTime: '07:00:00',
+            slotMaxTime: '19:00:00',
+            allDaySlot: false,
+            height: '100%',
+            contentHeight: 'auto',
+            aspectRatio: 1.8, // Relación de aspecto más horizontal
+            slotLabelFormat: {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            },
+            slotDuration: '01:00:00', // Intervalos de 1 hora
+            slotLabelInterval: '01:00:00', // Etiquetas cada 1 hora
+            
+            // CONFIGURACIÓN MEJORADA DE EVENTOS
+            eventDidMount: function(info) {
+                const docente = info.event.extendedProps.nombre;
+                const sala = info.event.title.split(' - ')[0];
+                const bloque = info.event.title.split(' - ')[1];
+                
+                if (docente) {
+                    // Tooltip personalizado
+                    info.el.addEventListener('mouseenter', function(e) {
+                        const cursoA = info.event.extendedProps.curso_asistente || '-';
+                        const cursoT = info.event.extendedProps.curso_tipo || '-';
+                        const tooltipText = `Sala: ${sala}\nBloque: ${bloque}\nDocente: ${docente}\nEstado: ${info.event.extendedProps.estado || 'aprobada'}\nCurso: ${cursoA} (${cursoT})`;
+                        tooltip.innerHTML = tooltipText.replace(/\n/g, '<br>');
+                        tooltip.style.display = 'block';
+                        updateTooltipPosition(e);
+                    });
+
+                    info.el.addEventListener('mousemove', function(e) {
+                        updateTooltipPosition(e);
+                    });
+
+                    info.el.addEventListener('mouseleave', function() {
+                        tooltip.style.display = 'none';
+                    });
+
+                    // También agregar title nativo como fallback
+                    info.el.setAttribute('title', `Sala: ${sala} | Bloque: ${bloque} | Docente: ${docente}`);
+                }
+
+                // Colores según el tipo de sala
+                if (info.event.backgroundColor === '#ffc107') {
+                    info.el.style.backgroundColor = '#ffc107';
+                    info.el.style.borderColor = '#ffc107';
+                } else if (info.event.backgroundColor === '#0d6efd') {
+                    info.el.style.backgroundColor = '#0d6efd';
+                    info.el.style.borderColor = '#0d6efd';
+                } else if (info.event.backgroundColor === '#20c997') {
+                    info.el.style.backgroundColor = '#20c997';
+                    info.el.style.borderColor = '#20c997';
+                } else if (info.event.backgroundColor === '#6610f2') {
+                    info.el.style.backgroundColor = '#6610f2';
+                    info.el.style.borderColor = '#6610f2';
+                }
+                
+                // Asegurar que el texto no se salga
+                info.el.style.overflow = 'hidden';
+                info.el.style.textOverflow = 'ellipsis';
+                info.el.style.whiteSpace = 'nowrap';
+            }
+        });
+
+        // Función para posicionar el tooltip
+        function updateTooltipPosition(e) {
+            const x = e.clientX + 10;
+            const y = e.clientY + 10;
+            
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+            
+            // Ajustar si se sale de la pantalla
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            if (x + tooltipRect.width > windowWidth) {
+                tooltip.style.left = (e.clientX - tooltipRect.width - 10) + 'px';
+            }
+            
+            if (y + tooltipRect.height > windowHeight) {
+                tooltip.style.top = (e.clientY - tooltipRect.height - 10) + 'px';
+            }
+        }
+
+        calendar.render();
+        console.log('Calendario renderizado');
+
+        // Forzar actualización de tamaño después de un breve delay
+        setTimeout(() => {
+            calendar.updateSize();
+            console.log('Tamaño del calendario actualizado');
+        }, 300);
+    });
+
+    // Funcionalidad del formulario
+    const bloquesData = {{ bloques|tojson }};
+    let reservasExistentes = [];
+    let bloquesSeleccionados = new Set();
+
+    async function cargarBloquesOcupados(sala, fecha) {
+        try {
+            const response = await fetch(`/api/bloques-ocupados?sala=${encodeURIComponent(sala)}&fecha=${fecha}`);
+            const data = await response.json();
+            reservasExistentes = data.bloques_ocupados || [];
+            actualizarInterfazBloques();
+        } catch (error) {
+            console.error('Error:', error);
+            reservasExistentes = [];
+        }
+    }
+
+    function actualizarInterfazBloques() {
+        const salaSelect = document.getElementById('sala');
+        const fechaInput = document.getElementById('fecha');
+        const tipo = salaSelect.options[salaSelect.selectedIndex]?.dataset.tipo;
+        const bloquesContainer = document.getElementById('bloquesContainer');
+        
+        if (tipo && bloquesData[tipo] && fechaInput.value) {
+            let html = '';
+            let disponibles = 0;
+            
+            // Lógica para detectar si la fecha es hoy y obtener hora actual
+            const hoy = new Date();
+            // Asegurar que solo comparamos año, mes, día (usando string literal iso del input)
+            const partesFecha = fechaInput.value.split('-');
+            const esHoy = (hoy.getFullYear() == partesFecha[0] && 
+                           (hoy.getMonth() + 1) == partesFecha[1] && 
+                           hoy.getDate() == partesFecha[2]);
+                           
+            const minActuales = hoy.getHours() * 60 + hoy.getMinutes();
+            
+            bloquesData[tipo].forEach(bloque => {
+                const ocupado = reservasExistentes.includes(bloque);
+                let ocultar = false;
+
+                if (ocupado) {
+                    ocultar = true; // Si está ocupado por otra persona, se oculta
+                } else if (esHoy) {
+                    // Extraer la hora inicial del string. Ej: "08:15" de "08:15 - 09:00"
+                    const horaInicioStr = bloque.split(' - ')[0];
+                    if (horaInicioStr) {
+                        const partesHora = horaInicioStr.split(':');
+                        const horas = parseInt(partesHora[0], 10);
+                        const mins = parseInt(partesHora[1], 10);
+                        const minBloque = horas * 60 + mins;
+                        // Ocultar si el inicio del bloque ya pasó
+                        if (minBloque <= minActuales) {
+                            ocultar = true;
+                        }
+                    }
+                }
+                
+                // Solo se dibuja el bloque si no está oculto
+                if (!ocultar) {
+                    disponibles++;
+                    const estaSeleccionado = bloquesSeleccionados.has(bloque);
+                    html += `
+                        <div class="bloque-option disponible">
+                            <input type="checkbox" value="${bloque}" ${estaSeleccionado ? 'checked' : ''} onchange="toggleBloque(this)"> ${bloque}
+                            <span class="badge bg-success">Disponible</span>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (disponibles === 0) {
+                bloquesContainer.innerHTML = `
+                    <div class="alert alert-warning py-3 text-center">
+                        <i class="fas fa-calendar-times mb-2 fa-2x"></i><br>
+                        Ya no hay bloques disponibles para esta fecha.
+                    </div>
+                `;
+            } else {
+                bloquesContainer.innerHTML = html;
+            }
+            
+            document.getElementById('bloquesInfo').innerHTML = `
+                <div class="alert alert-${disponibles > 0 ? 'success' : 'warning'} mt-2">
+                    <i class="fas fa-${disponibles > 0 ? 'check' : 'exclamation-triangle'} me-1"></i>
+                    ${disponibles} de ${bloquesData[tipo].length} bloques disponibles
+                    ${bloquesSeleccionados.size > 0 ? ` | ${bloquesSeleccionados.size} seleccionados` : ''}
+                </div>
+            `;
+        } else {
+            bloquesContainer.innerHTML = `
+                <div class="alert alert-info py-2">
+                    <small>Selecciona una sala y fecha primero</small>
+                </div>
+            `;
+            document.getElementById('bloquesInfo').innerHTML = '';
+        }
+    }
+
+    function toggleBloque(checkbox) {
+        if (checkbox.checked) {
+            bloquesSeleccionados.add(checkbox.value);
+        } else {
+            bloquesSeleccionados.delete(checkbox.value);
+        }
+        actualizarInterfazBloques(); // Actualizar contador
+    }
+
+    document.getElementById('sala').addEventListener('change', function() {
+        const fecha = document.getElementById('fecha').value;
+        bloquesSeleccionados.clear();
+        if (fecha) cargarBloquesOcupados(this.value, fecha);
+    });
+
+    document.getElementById('fecha').addEventListener('change', function() {
+        const sala = document.getElementById('sala').value;
+        bloquesSeleccionados.clear();
+        if (sala) cargarBloquesOcupados(sala, this.value);
+    });
+
+    // Modal para el submit
+    document.getElementById('reservaForm').addEventListener('submit', function(e) {
+        e.preventDefault(); // Interceptamos para validar
+        
+        if (bloquesSeleccionados.size === 0) {
+            alert('Selecciona al menos un bloque horario');
+            return;
+        }
+        
+        const salaSelect = document.getElementById('sala');
+        const cursoTipo = document.getElementById('curso_tipo').value;
+        const tipoSala = salaSelect.options[salaSelect.selectedIndex]?.dataset.tipo;
+        
+        const fecha = document.getElementById('fecha').value;
+        const primerosBloques = Array.from(bloquesSeleccionados).sort();
+        const horaInicioStr = primerosBloques[0].split('-')[0]; // Ej: "08:15"
+        
+        const fechaHoraReserva = new Date(`${fecha}T${horaInicioStr}:00`);
+        const ahora = new Date();
+        const diffHoras = (fechaHoraReserva - ahora) / (1000 * 60 * 60);
+
+        // Mismatch solo penaliza si es dentro de 48 hs
+        if (tipoSala && cursoTipo && tipoSala !== cursoTipo && diffHoras <= 48) {
+            document.getElementById('modalTipoSala').textContent = tipoSala;
+            document.getElementById('modalTipoCurso').textContent = cursoTipo;
+            
+            const myModal = new bootstrap.Modal(document.getElementById('modalAutorizacion'));
+            myModal.show();
+            
+            document.getElementById('btnConfirmarReservaModal').onclick = function() {
+                myModal.hide();
+                enviarFormulario();
+            };
+        } else {
+            enviarFormulario();
+        }
+    });
+
+    function enviarFormulario() {
+        const form = document.getElementById('reservaForm');
+        // Limpiamos ocultos anteriores por si acaso
+        const prevInput = form.querySelector('input[name="bloque"]');
+        if(prevInput) prevInput.remove();
+
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'bloque';
+        hiddenInput.value = Array.from(bloquesSeleccionados).join(',');
+        form.appendChild(hiddenInput);
+        form.submit();
+    }
+</script>
+
+<!-- Modal de Autorización de Reserva (Mismatch <= 48hs) -->
+<div class="modal fade" id="modalAutorizacion" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-warning">
+      <div class="modal-header bg-warning">
+        <h5 class="modal-title text-dark"><i class="fas fa-exclamation-triangle me-2"></i>Requiere Autorización</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+        <h5 class="mb-3">Reserva en el corto plazo</h5>
+        <p>Estás solicitando una sala de <strong id="modalTipoSala"></strong> para un curso de <strong id="modalTipoCurso"></strong> dentro de las próximas 48 horas.</p>
+        <p class="mb-0 text-muted"><strong>Tu reserva será registrada como "Pendiente"</strong> y requerirá la aprobación del administrador para confirmarse.</p>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-secondary w-25" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-warning w-50 fw-bold shadow-sm" id="btnConfirmarReservaModal">Entendido, Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

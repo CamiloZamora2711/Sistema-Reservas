@@ -1,0 +1,27 @@
+{% extends 'layout.html' %}
+
+{% block title %}Editar Reserva{% endblock %}
+
+{% block content %}
+<h2>Editar Reserva</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label>Sala:</label>
+        <input name="sala" class="form-control" value="{{ reserva[1] }}" required>
+    </div>
+    <div class="mb-3">
+        <label>Fecha:</label>
+        <input type="date" name="fecha" class="form-control" value="{{ reserva[2] }}" required>
+    </div>
+    <div class="mb-3">
+        <label>Bloque:</label>
+        <input name="bloque" class="form-control" value="{{ reserva[3] }}" required>
+    </div>
+    <div class="mb-3">
+        <label>Nombre:</label>
+        <input name="nombre" class="form-control" value="{{ reserva[4] }}" required>
+    </div>
+    <button class="btn btn-primary" type="submit">Guardar Cambios</button>
+</form>
+<a href="{{ url_for('admin') }}" class="btn btn-link">Volver</a>
+{% endblock %}
