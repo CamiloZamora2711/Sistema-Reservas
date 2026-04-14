@@ -28,7 +28,7 @@
 
     /* CONTENEDOR DEL CALENDARIO - CORREGIDO */
     .calendar-container {
-        height: 600px;
+        height: 950px;
         padding: 0.5rem;
         overflow: hidden; /* Evita que se salga */
     }
@@ -58,7 +58,7 @@
 
     /* Ajustes específicos para la vista semanal */
     .fc-timeGridWeek-view .fc-timegrid-slot {
-        height: 40px !important; /* Altura fija para las celdas */
+        /* Altura automática distribuida por FullCalendar */
     }
 
     .fc-timeGridWeek-view .fc-event {
@@ -139,20 +139,7 @@
         color: #3498db;
     }
 
-    /* Tooltip personalizado para eventos */
-    .event-tooltip {
-        position: absolute;
-        background: rgba(0, 0, 0, 0.9);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 4px;
-        font-size: 12px;
-        z-index: 1000;
-        pointer-events: none;
-        max-width: 250px;
-        white-space: normal;
-        line-height: 1.4;
-    }
+    /* Tooltip removido por solicitud del usuario */
 
     /* Responsive para móviles */
     @media (max-width: 768px) {
@@ -450,11 +437,7 @@ function actualizarCursoTipo() {
             return;
         }
 
-        // Crear tooltip personalizado
-        const tooltip = document.createElement('div');
-        tooltip.className = 'event-tooltip';
-        tooltip.style.display = 'none';
-        document.body.appendChild(tooltip);
+
 
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'timeGridWeek',
@@ -471,11 +454,11 @@ function actualizarCursoTipo() {
                 hour12: false
             },
             hiddenDays: [0], // Ocultar domingo
-            slotMinTime: '07:00:00',
-            slotMaxTime: '19:00:00',
+            slotMinTime: '08:00:00',
+            slotMaxTime: '17:10:00',
             allDaySlot: false,
             height: '100%',
-            contentHeight: 'auto',
+            expandRows: true,
             aspectRatio: 1.8, // Relación de aspecto más horizontal
             slotLabelFormat: {
                 hour: '2-digit',
@@ -485,47 +468,17 @@ function actualizarCursoTipo() {
             slotDuration: '01:00:00', // Intervalos de 1 hora
             slotLabelInterval: '01:00:00', // Etiquetas cada 1 hora
             
-            // CONFIGURACIÓN MEJORADA DE EVENTOS
             eventDidMount: function(info) {
-                const docente = info.event.extendedProps.nombre;
-                const sala = info.event.title.split(' - ')[0];
-                const bloque = info.event.title.split(' - ')[1];
-                
-                if (docente) {
-                    // Tooltip personalizado
-                    info.el.addEventListener('mouseenter', function(e) {
-                        const cursoA = info.event.extendedProps.curso_asistente || '-';
-                        const cursoT = info.event.extendedProps.curso_tipo || '-';
-                        const tooltipText = `Sala: ${sala}\nBloque: ${bloque}\nDocente: ${docente}\nEstado: ${info.event.extendedProps.estado || 'aprobada'}\nCurso: ${cursoA} (${cursoT})`;
-                        tooltip.innerHTML = tooltipText.replace(/\n/g, '<br>');
-                        tooltip.style.display = 'block';
-                        updateTooltipPosition(e);
-                    });
-
-                    info.el.addEventListener('mousemove', function(e) {
-                        updateTooltipPosition(e);
-                    });
-
-                    info.el.addEventListener('mouseleave', function() {
-                        tooltip.style.display = 'none';
-                    });
-
-                    // También agregar title nativo como fallback
-                    info.el.setAttribute('title', `Sala: ${sala} | Bloque: ${bloque} | Docente: ${docente}`);
-                }
-
-                // Asegurar que el texto no se salga
+                // Permitir que el texto sea legible
                 info.el.style.overflow = 'hidden';
-                info.el.style.textOverflow = 'ellipsis';
-                info.el.style.whiteSpace = 'nowrap';
+                info.el.style.whiteSpace = 'normal';
             },
 
             // POP UP al hacer clic en un evento
             eventClick: function(info) {
                 const props = info.event.extendedProps;
-                const title  = info.event.title;
-                const sala   = title.split(' - ')[0] || '-';
-                const bloque = title.split(' - ')[1]?.split(' (')[0] || '-';
+                const sala   = props.sala || '-';
+                const bloque = props.bloque || '-';
                 const docente = props.nombre || '-';
                 const curso   = props.curso_asistente || '-';
                 const tipo    = props.curso_tipo || '-';
@@ -558,27 +511,7 @@ function actualizarCursoTipo() {
             }
         });
 
-        // Función para posicionar el tooltip
-        function updateTooltipPosition(e) {
-            const x = e.clientX + 10;
-            const y = e.clientY + 10;
-            
-            tooltip.style.left = x + 'px';
-            tooltip.style.top = y + 'px';
-            
-            // Ajustar si se sale de la pantalla
-            const tooltipRect = tooltip.getBoundingClientRect();
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            
-            if (x + tooltipRect.width > windowWidth) {
-                tooltip.style.left = (e.clientX - tooltipRect.width - 10) + 'px';
-            }
-            
-            if (y + tooltipRect.height > windowHeight) {
-                tooltip.style.top = (e.clientY - tooltipRect.height - 10) + 'px';
-            }
-        }
+
 
         calendar.render();
         console.log('Calendario renderizado');

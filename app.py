@@ -480,7 +480,8 @@ def index():
         curso_tipo_reserva = r[5] if len(r) > 5 else ''
         curso_asistente = r[7] if len(r) > 7 else ''
         
-        titulo_evento = f"{sala_nombre} - {bloque}"
+        docente = r[4]
+        titulo_evento = f"{docente} - {sala_nombre} - {bloque}"
         if curso_asistente:
             titulo_evento += f" ({curso_asistente})"
 
@@ -490,7 +491,9 @@ def index():
             'end': end_datetime,
             'color': color,
             'extendedProps': {
-                'nombre': r[4],
+                'nombre': docente,
+                'sala': sala_nombre,
+                'bloque': bloque,
                 'estado': estado_reserva,
                 'curso_tipo': curso_tipo_reserva,
                 'curso_asistente': curso_asistente
