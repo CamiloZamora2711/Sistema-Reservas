@@ -81,15 +81,16 @@ def enviar_correo_admin(sala, fecha, bloques, nombre, curso_tipo, curso_asistent
     """Envía un correo de notificación al administrador cuando hay una reserva pendiente con diseño HTML."""
     fecha = format_d_mm_aaaa(fecha)
     if not MAIL_USERNAME or MAIL_USERNAME == '':
-        print("Advertencia: No se envió correo porque no se han configurado las credenciales.")
+        print(f"ERROR: No se envio correo a admin porque no hay credenciales (MAIL_USERNAME={MAIL_USERNAME})")
         return
+    print(f"INFO: Iniciando envio de correo admin para sala: {sala}")
 
     msg = EmailMessage()
     msg['Subject'] = f'Reserva Pendiente de Confirmación: {sala}'
     msg['From'] = MAIL_USERNAME
     msg['To'] = ADMIN_EMAIL
     
-    logo_cid = make_msgid()
+
 
     cuerpo_texto = f"""Estimado Administrador,
 Se ha ingresado una nueva reserva que requiere su confirmación.
@@ -127,7 +128,7 @@ Atte, Sistema de Reservas Automático"""
     <body>
         <div class="container">
             <div class="header">
-                <img src="cid:{logo_cid[1:-1]}" alt="Seminario San Rafael">
+                <img src="cid:logo_ssr" alt="Seminario San Rafael">
             </div>
             <div class="content">
                 <h2 class="h2">Alerta de Aprobación</h2>
@@ -162,19 +163,27 @@ Atte, Sistema de Reservas Automático"""
     </html>
     """
     msg.add_alternative(cuerpo_html, subtype='html')
-
+    # Buscar la parte HTML para adjuntar el logo como relacionado
+    html_part = next((p for p in msg.iter_parts() if p.get_content_type() == 'text/html'), None)
+    
     try:
         logo_path = os.path.join(app.root_path, 'static', 'descarga.png')
         if os.path.exists(logo_path):
             with open(logo_path, 'rb') as img:
                 img_data = img.read()
-            msg.get_payload()[1].add_related(img_data, 'image', 'png', cid=logo_cid)
+            if html_part:
+                html_part.add_related(img_data, 'image', 'png', cid='<logo_ssr>')
+                print("INFO: Logo adjuntado exitosamente al correo admin.")
+            else:
+                print("ERROR: No se pudo encontrar la parte HTML para adjuntar el logo admin.")
+        else:
+            print(f"ADVERTENCIA: Imagen de logo no encontrada en: {logo_path}")
             
         with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
             server.starttls()
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
             server.send_message(msg)
-            print("Correo notificado al administrador con éxito.")
+            print(f"SUCCESS: Correo notificado al administrador ({ADMIN_EMAIL}) con exito.")
     except Exception as e:
         print(f"Error al enviar el correo al administrador: {e}")
 
@@ -182,14 +191,16 @@ def enviar_correo_usuario(correo_destino, nombre, sala, fecha, bloques, estado):
     """Envía un correo de confirmación al usuario que hizo la reserva con diseño HTML."""
     fecha = format_d_mm_aaaa(fecha)
     if not correo_destino or not MAIL_USERNAME or MAIL_USERNAME == '':
+        print(f"ERROR: Abortando envio a usuario {nombre}: Destino={correo_destino}, Usuario={MAIL_USERNAME}")
         return
+    print(f"INFO: Iniciando envio de correo de confirmacion a: {correo_destino}")
 
     msg = EmailMessage()
     msg['Subject'] = 'Confirmación de Reserva - Seminario San Rafael'
     msg['From'] = MAIL_USERNAME
     msg['To'] = correo_destino
 
-    logo_cid = make_msgid()
+
     estado_txt = "pendientes de aprobación por el administrador" if estado == "pendiente" else "aprobadas"
     color_estado = "#ffc107" if estado == "pendiente" else "#198754"
     badge_estado = "Pendiente de Aprobación" if estado == "pendiente" else "Reserva Aprobada"
@@ -227,7 +238,7 @@ Atte, Sistema de Reservas SSR"""
     <body>
         <div class="container">
             <div class="header">
-                <img src="cid:{logo_cid[1:-1]}" alt="Seminario San Rafael">
+                <img src="cid:logo_ssr" alt="Seminario San Rafael">
             </div>
             <div class="content">
                 <h2 class="h2">Comprobante de Reserva</h2>
@@ -257,7 +268,7 @@ Atte, Sistema de Reservas SSR"""
     </body>
     </html>
     """
-    msg.add_alternative(cuerpo_html, subtype='html')
+    html_part = msg.add_alternative(cuerpo_html, subtype='html')
 
     try:
         # Adjuntar la imagen inline para que se vea sin necesidad de descargar
@@ -265,7 +276,12 @@ Atte, Sistema de Reservas SSR"""
         if os.path.exists(logo_path):
             with open(logo_path, 'rb') as img:
                 img_data = img.read()
-            msg.get_payload()[1].add_related(img_data, 'image', 'png', cid=logo_cid)
+            html_part = next((p for p in msg.iter_parts() if p.get_content_type() == 'text/html'), None)
+            if html_part:
+                html_part.add_related(img_data, 'image', 'png', cid='<logo_ssr>')
+                print("INFO: Logo adjuntado exitosamente al correo de usuario.")
+            else:
+                print("ERROR: No se pudo encontrar la parte HTML para adjuntar el logo de usuario.")
         else:
             print(f"Advertencia: El logo en {logo_path} no se encuentra.")
 
@@ -273,7 +289,7 @@ Atte, Sistema de Reservas SSR"""
             server.starttls()
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
             server.send_message(msg)
-            print(f"Correo de confirmación enviado a {correo_destino}.")
+            print(f"SUCCESS: Correo de confirmacion enviado a {correo_destino} con exito.")
     except Exception as e:
         print(f"Error al enviar confirmación al usuario {correo_destino}: {e}")
 
@@ -281,14 +297,16 @@ def enviar_correo_resolucion(correo_destino, nombre, sala, fecha, bloque, resolu
     """Envía un correo cuando el administrador aprueba o rechaza una reserva específica."""
     fecha = format_d_mm_aaaa(fecha)
     if not correo_destino or not MAIL_USERNAME or MAIL_USERNAME == '':
+        print(f"ERROR: Abortando correo de resolucion: Destino={correo_destino}, Usuario={MAIL_USERNAME}")
         return
+    print(f"INFO: Iniciando envio de correo de resolucion ({resolucion}) a: {correo_destino}")
 
     msg = EmailMessage()
     msg['Subject'] = f'Resolución de Reserva: {resolucion.capitalize()}'
     msg['From'] = MAIL_USERNAME
     msg['To'] = correo_destino
     
-    logo_cid = make_msgid()
+
     color_estado = "#198754" if resolucion == "aprobada" else "#dc3545"
     badge_estado = "Reserva Aprobada" if resolucion == "aprobada" else "Reserva Rechazada/Cancelada"
     mensaje_accion = "ha sido <strong>APROBADA</strong>" if resolucion == "aprobada" else "ha sido <strong>RECHAZADA o CANCELADA</strong>"
@@ -321,7 +339,7 @@ def enviar_correo_resolucion(correo_destino, nombre, sala, fecha, bloque, resolu
     <body>
         <div class="container">
             <div class="header">
-                <img src="cid:{logo_cid[1:-1]}" alt="Seminario San Rafael">
+                <img src="cid:logo_ssr" alt="Seminario San Rafael">
             </div>
             <div class="content">
                 <h2 class="h2" style="color: {color_estado};">Resolución de Reserva</h2>
@@ -349,18 +367,24 @@ def enviar_correo_resolucion(correo_destino, nombre, sala, fecha, bloque, resolu
     </html>
     """
     msg.add_alternative(cuerpo_html, subtype='html')
+    # Buscar la parte HTML para adjuntar el logo como relacionado
+    html_part = next((p for p in msg.iter_parts() if p.get_content_type() == 'text/html'), None)
 
     try:
         logo_path = os.path.join(app.root_path, 'static', 'descarga.png')
         if os.path.exists(logo_path):
             with open(logo_path, 'rb') as img:
-                msg.get_payload()[1].add_related(img.read(), 'image', 'png', cid=logo_cid)
+                if html_part:
+                    html_part.add_related(img.read(), 'image', 'png', cid='<logo_ssr>')
+                    print("INFO: Logo adjuntado exitosamente al correo de resolucion.")
+                else:
+                    print("ERROR: No se pudo encontrar la parte HTML para adjuntar el logo de resolucion.")
                 
         with smtplib.SMTP(MAIL_SERVER, MAIL_PORT) as server:
             server.starttls()
             server.login(MAIL_USERNAME, MAIL_PASSWORD)
             server.send_message(msg)
-            print(f"Correo de resolución enviado a {correo_destino}.")
+            print(f"SUCCESS: Correo de resolucion ({resolucion}) enviado a {correo_destino} con exito.")
     except Exception as e:
         print(f"Error al enviar correo de resolución a {correo_destino}: {e}")
 
@@ -387,9 +411,24 @@ def index():
         curso_seccion = request.form.get('curso_seccion', '')
         curso_asistente = f"{curso_nivel} {curso_seccion}".strip()
         
-        if not curso_tipo:
-            flash('Debes indicar el nivel de curso.', 'danger')
-            return redirect(url_for('index'))
+        # Obtener el rol del usuario para validación
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT rol FROM usuarios WHERE nombre=?", (nombre,))
+        row_rol = c.fetchone()
+        user_rol = row_rol[0] if row_rol else 'docente'
+        conn.close()
+
+        if user_rol == 'administrativo':
+            # Para administrativos, el curso es opcional y se aprueba siempre
+            curso_tipo = curso_tipo if curso_tipo else 'administrativo'
+            estado = 'aprobada'
+        else:
+            # Para docentes, validamos curso
+            if not curso_tipo:
+                flash('Debes indicar el nivel de curso.', 'danger')
+                return redirect(url_for('index'))
+            estado = 'aprobada' # Por defecto, luego se evalua si pasa a pendiente
 
         bloques_seleccionados = [b.strip() for b in bloques_str.split(',') if b.strip()]
 
@@ -397,8 +436,8 @@ def index():
         tipo_sala = salas_disponibles.get(sala, {}).get('tipo', '')
         estado = 'aprobada'
 
-        if tipo_sala and curso_tipo != tipo_sala:
-            # Calcular la diferencia de horas
+        if user_rol != 'administrativo' and tipo_sala and curso_tipo != tipo_sala:
+            # Calcular la diferencia de horas (solo para no-administrativos)
             primer_bloque = bloques_seleccionados[0] if bloques_seleccionados else ''
             inicio = bloque_a_hora.get(primer_bloque, ("08:00:00", "08:45:00"))[0]
             
@@ -441,8 +480,11 @@ def index():
             flash('Reserva realizada con éxito.', 'success')
             
         # Enviar siempre el correo al usuario confirmando que se ingresó
+        print(f"DEBUG: Validando envio a usuario '{nombre}'. Email en DB: '{correo_usuario}'. Estado reserva: '{estado}'")
         if correo_usuario:
             enviar_correo_usuario(correo_usuario, nombre, sala, fecha, bloques_seleccionados, estado)
+        else:
+            print(f"WARNING: No se pudo enviar correo al usuario '{nombre}' porque no tiene email registrado en la base de datos.")
 
         return redirect(url_for('index'))
 
@@ -452,8 +494,8 @@ def index():
     reservas_db = c.fetchall()
     # Obtener lista de usuarios para el autocompletado
     try:
-        c.execute("SELECT nombre FROM usuarios ORDER BY nombre")
-        lista_usuarios = [row[0] for row in c.fetchall()]
+        c.execute("SELECT nombre, rol FROM usuarios ORDER BY nombre")
+        lista_usuarios = [dict(nombre=row[0], rol=row[1]) for row in c.fetchall()]
     except Exception:
         lista_usuarios = []
     conn.close()
@@ -538,7 +580,7 @@ def admin():
     c = conn.cursor()
     c.execute("SELECT * FROM reservas ORDER BY estado DESC, fecha, bloque")
     reservas = [
-        dict(id=row[0], sala=row[1], fecha=format_d_mm_aaaa(row[2]), bloque=row[3], nombre=row[4],
+        dict(id=row[0], sala=row[1], fecha=format_d_mm_aaaa(row[2]), fecha_original=row[2], bloque=row[3], nombre=row[4],
              curso_tipo=row[5] if len(row) > 5 else 'media',
              estado=row[6] if len(row) > 6 else 'aprobada')
         for row in c.fetchall()

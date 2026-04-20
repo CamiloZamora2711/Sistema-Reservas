@@ -319,7 +319,7 @@
                                 </div>
                             </div>
 
-                            <div class="mb-4">
+                            <div class="mb-4" id="cursoGroup">
                                 <label class="form-label fw-bold"><i class="fas fa-graduation-cap me-2 text-primary"></i>Curso *</label>
                                 <div class="row g-2">
                                     <div class="col-md-8">
@@ -382,23 +382,67 @@
         if (!input || !dropdown) return;
         const val = this.value.trim().toLowerCase();
         dropdown.innerHTML = '';
-        if (!val) { dropdown.classList.add('d-none'); return; }
-        const filtrados = usuarios.filter(u => u.toLowerCase().includes(val));
-        if (filtrados.length === 0) { dropdown.classList.add('d-none'); return; }
-        filtrados.forEach(function(nombre) {
+        if (!val) { 
+            dropdown.classList.add('d-none');
+            resetCursoFields();
+            return; 
+        }
+        const filtrados = usuarios.filter(u => u.nombre.toLowerCase().includes(val));
+        if (filtrados.length === 0) { 
+            dropdown.classList.add('d-none');
+            resetCursoFields();
+            return; 
+        }
+        filtrados.forEach(function(u) {
             const li = document.createElement('li');
-            li.className = 'list-group-item list-group-item-action py-2 small';
+            li.className = 'list-group-item list-group-item-action py-2 small d-flex justify-content-between align-items-center';
             li.style.cursor = 'pointer';
-            li.textContent = nombre;
+            
+            let html = `<span>${u.nombre}</span>`;
+            if (u.rol === 'administrativo') {
+                html += `<span class="badge bg-info text-dark x-small">Admin</span>`;
+            }
+            li.innerHTML = html;
+
             li.addEventListener('mousedown', function(e) {
                 e.preventDefault();
-                input.value = nombre;
+                input.value = u.nombre;
                 dropdown.classList.add('d-none');
+                applyRoleLogic(u.rol);
             });
             dropdown.appendChild(li);
         });
         dropdown.classList.remove('d-none');
     });
+
+    function applyRoleLogic(rol) {
+        const cursoGroup = document.getElementById('cursoGroup');
+        const cursoNivel = document.getElementById('curso_nivel');
+        const cursoSeccion = document.getElementById('curso_seccion');
+        const cursoTipo = document.getElementById('curso_tipo');
+
+        if (rol === 'administrativo') {
+            cursoGroup.classList.add('opacity-50');
+            cursoNivel.required = false;
+            cursoSeccion.required = false;
+            cursoTipo.value = 'administrativo';
+            // Opcional: deshabilitar para evitar confusión, o dejar opcional
+            // cursoNivel.disabled = true;
+            // cursoSeccion.disabled = true;
+        } else {
+            resetCursoFields();
+        }
+    }
+
+    function resetCursoFields() {
+        const cursoGroup = document.getElementById('cursoGroup');
+        const cursoNivel = document.getElementById('curso_nivel');
+        const cursoSeccion = document.getElementById('curso_seccion');
+        cursoGroup.classList.remove('opacity-50');
+        cursoNivel.required = true;
+        cursoSeccion.required = true;
+        actualizarCursoTipo(); // Restaurar tipo según nivel seleccionado
+    }
 
     input.addEventListener('focus', function() {
         if (this.value.trim()) input.dispatchEvent(new Event('input'));

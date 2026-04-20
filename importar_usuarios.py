@@ -44,26 +44,26 @@ def importar_usuarios():
     c.execute('''CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL UNIQUE,
-        correo TEXT
+        correo TEXT,
+        rol TEXT DEFAULT 'docente'
     )''')
     conn.commit()
     
-    # Intento de agregar la columna 'correo' si la tabla es antigua y no la tiene
-    try:
-        c.execute("ALTER TABLE usuarios ADD COLUMN correo TEXT")
-        conn.commit()
-    except sqlite3.OperationalError:
-        pass  # La columna ya existe
+    # Intento de agregar las columnas si la tabla es antigua
+    for col, default in [('correo', 'NULL'), ('rol', "'docente'")]:
+        try:
+            c.execute(f"ALTER TABLE usuarios ADD COLUMN {col} {default if col == 'correo' else 'TEXT DEFAULT ' + default}")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # La columna ya existe
 
     print("✅ Tabla 'usuarios' lista.")
 
     # Insertar nombres (sin duplicados)
     insertados = 0
     omitidos = 0
-    for nombre in nombres:
-        correo = calcular_correo(nombre)
         try:
-            c.execute("INSERT INTO usuarios (nombre, correo) VALUES (?, ?)", (nombre, correo))
+            c.execute("INSERT INTO usuarios (nombre, correo, rol) VALUES (?, ?, ?)", (nombre, correo, 'docente'))
             insertados += 1
         except sqlite3.IntegrityError:
             omitidos += 1  # Nombre ya existe

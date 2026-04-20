@@ -19,9 +19,12 @@
 <div class="card">
     <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
         <span><i class="fas fa-list me-2"></i>Lista de Reservas</span>
-        <div class="input-group" style="max-width: 300px;">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" id="searchInput" class="form-control" placeholder="Buscar sala, clase, fecha...">
+        <div class="input-group" style="max-width: 350px;">
+            <span class="input-group-text bg-primary text-white"><i class="fas fa-calendar-alt"></i></span>
+            <input type="date" id="dateFilter" class="form-control" title="Filtrar por fecha">
+            <button class="btn btn-outline-secondary" type="button" id="clearFilter" title="Limpiar filtro">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
     <div class="card-body">
@@ -42,7 +45,7 @@
                 </thead>
                 <tbody>
                     {% for reserva in reservas %}
-                    <tr class="{% if reserva.estado == 'pendiente' %}table-warning{% endif %}">
+                    <tr class="{% if reserva.estado == 'pendiente' %}table-warning{% endif %}" data-fecha-iso="{{ reserva.fecha_original }}">
                         <td>{{ reserva.id }}</td>
                         <td>
                             <span class="badge 
@@ -159,19 +162,30 @@
         }
     }
 
-    // Buscador interactivo
-    document.getElementById('searchInput')?.addEventListener('keyup', function() {
-        let filter = this.value.toLowerCase();
+    // Buscador por fecha interactivo
+    const dateFilter = document.getElementById('dateFilter');
+    const clearFilter = document.getElementById('clearFilter');
+
+    function filterTable() {
+        let filter = dateFilter.value; // Formato YYYY-MM-DD
         let rows = document.querySelectorAll('.table tbody tr');
         
         rows.forEach(row => {
-            let text = row.textContent.toLowerCase();
-            if (text.includes(filter)) {
+            let rowDate = row.getAttribute('data-fecha-iso');
+            if (!filter || rowDate === filter) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
             }
         });
+    }
+
+    dateFilter?.addEventListener('change', filterTable);
+    dateFilter?.addEventListener('input', filterTable);
+
+    clearFilter?.addEventListener('click', function() {
+        dateFilter.value = '';
+        filterTable();
     });
 </script>
 {% endblock %}
