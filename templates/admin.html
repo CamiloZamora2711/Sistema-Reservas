@@ -19,12 +19,18 @@
 <div class="card">
     <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
         <span><i class="fas fa-list me-2"></i>Lista de Reservas</span>
-        <div class="input-group" style="max-width: 350px;">
-            <span class="input-group-text bg-primary text-white"><i class="fas fa-calendar-alt"></i></span>
-            <input type="date" id="dateFilter" class="form-control" title="Filtrar por fecha">
-            <button class="btn btn-outline-secondary" type="button" id="clearFilter" title="Limpiar filtro">
-                <i class="fas fa-times"></i>
-            </button>
+        <div class="d-flex flex-column flex-md-row gap-2 w-100 justify-content-md-end" style="max-width: 700px;">
+            <div class="input-group">
+                <span class="input-group-text bg-info text-white"><i class="fas fa-user"></i></span>
+                <input type="text" id="nameFilter" class="form-control" placeholder="Buscar docente..." title="Filtrar por docente">
+            </div>
+            <div class="input-group">
+                <span class="input-group-text bg-primary text-white"><i class="fas fa-calendar-alt"></i></span>
+                <input type="date" id="dateFilter" class="form-control" title="Filtrar por fecha">
+                <button class="btn btn-outline-secondary" type="button" id="clearFilter" title="Limpiar filtro">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
         </div>
     </div>
     <div class="card-body">
@@ -45,7 +51,9 @@
                 </thead>
                 <tbody>
                     {% for reserva in reservas %}
-                    <tr class="{% if reserva.estado == 'pendiente' %}table-warning{% endif %}" data-fecha-iso="{{ reserva.fecha_original }}">
+                    <tr class="{% if reserva.estado == 'pendiente' %}table-warning{% endif %}" 
+                        data-fecha-iso="{{ reserva.fecha_original }}"
+                        data-nombre="{{ reserva.nombre|lower }}">
                         <td>{{ reserva.id }}</td>
                         <td>
                             <span class="badge 
@@ -162,17 +170,24 @@
         }
     }
 
-    // Buscador por fecha interactivo
+    // Buscadores interactivos
     const dateFilter = document.getElementById('dateFilter');
+    const nameFilter = document.getElementById('nameFilter');
     const clearFilter = document.getElementById('clearFilter');
 
     function filterTable() {
-        let filter = dateFilter.value; // Formato YYYY-MM-DD
+        let dateVal = dateFilter.value;
+        let nameVal = nameFilter.value.toLowerCase().trim();
         let rows = document.querySelectorAll('.table tbody tr');
         
         rows.forEach(row => {
             let rowDate = row.getAttribute('data-fecha-iso');
-            if (!filter || rowDate === filter) {
+            let rowName = row.getAttribute('data-nombre');
+            
+            let dateMatch = !dateVal || rowDate === dateVal;
+            let nameMatch = !nameVal || rowName.includes(nameVal);
+            
+            if (dateMatch && nameMatch) {
                 row.style.display = '';
             } else {
                 row.style.display = 'none';
@@ -182,9 +197,11 @@
 
     dateFilter?.addEventListener('change', filterTable);
     dateFilter?.addEventListener('input', filterTable);
+    nameFilter?.addEventListener('input', filterTable);
 
     clearFilter?.addEventListener('click', function() {
         dateFilter.value = '';
+        nameFilter.value = '';
         filterTable();
     });
 </script>
